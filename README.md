@@ -35,6 +35,11 @@ Advanced speed/repeat controls, protected WebVTT sidecars, audio/subtitle
 track menus, chapters, thumbnail scrubbing previews, and Picture in Picture
 capability handling are also in place. macOS Now Playing/media-key integration
 is intentionally deferred; see [`docs/decisions/0006-macos-media-controls-scope.md`](docs/decisions/0006-macos-media-controls-scope.md).
+Phase 8’s native-gap audit found no requirement to make Swift mandatory;
+the result is documented in [`docs/decisions/0007-native-helper-gap-audit.md`](docs/decisions/0007-native-helper-gap-audit.md).
+An optional Swift AVFoundation metadata bridge is available for inspection:
+run `pnpm native:build`, then `pnpm dev`. It is fail-soft and not required for
+ordinary playback. See [`docs/decisions/0008-swift-metadata-bridge.md`](docs/decisions/0008-swift-metadata-bridge.md).
 Manual VoiceOver verification remains a release validation step. Electron
 Forge packaging remains intentionally deferred to Phase 11.
 

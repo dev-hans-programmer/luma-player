@@ -16,3 +16,4 @@ test-results/
 *.provisionprofile
 release/
 out/
+.build/

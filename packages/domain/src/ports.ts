@@ -32,6 +32,19 @@ export interface NativeMacOSService {
   clearNowPlayingInfo(): Promise<void>;
 }
 
+/** Optional main-process bridge for capabilities backed by AVFoundation. */
+export interface NativeMediaProbe {
+  probe(filePath: string): Promise<NativeMediaProbeResult | null>;
+  dispose(): void;
+}
+
+export interface NativeMediaProbeResult {
+  readonly durationMs: number | null;
+  readonly width: number | null;
+  readonly height: number | null;
+  readonly hasAudio: boolean;
+}
+
 export interface WindowControlPort {
   close(): void;
   minimize(): void;

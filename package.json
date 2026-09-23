@@ -17,6 +17,8 @@
     "hooks:install": "node scripts/install-git-hooks.mjs",
     "test": "pnpm --recursive test",
     "test:e2e": "pnpm --filter @luma/desktop test:e2e",
+    "native:build": "swift build --package-path native/macos/MediaMetadataKit --configuration release",
+    "native:test": "swift run --package-path native/macos/MediaMetadataKit luma-media-helper-self-test",
     "ci": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build"
   },
   "devDependencies": {

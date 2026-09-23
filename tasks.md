@@ -622,27 +622,27 @@ Acceptance criteria:
 
 ## T801 — Confirm native gap before adding Swift
 
-- [ ] Profile the Electron implementation first.
-- [ ] Record the exact missing capability.
-- [ ] Confirm it cannot be implemented reliably in Electron.
-- [ ] Create an architecture decision record before proceeding.
+- [x] Profile the Electron implementation first.
+- [x] Record the exact missing capability.
+- [x] Confirm it cannot be implemented reliably in Electron.
+- [x] Create an architecture decision record before proceeding.
 
 ## T802 — Create the Swift helper package
 
-- [ ] Create `native/macos/MediaMetadataKit`.
-- [ ] Define a small command/response protocol.
-- [ ] Keep the helper independent from React.
-- [ ] Add arm64 and x64 build targets.
-- [ ] Add unit tests for native operations.
+- [x] Create `native/macos/MediaMetadataKit`.
+- [x] Define a small command/response protocol.
+- [x] Keep the helper independent from React.
+- [~] Add arm64 and x64 build targets.
+- [x] Add unit tests for native operations.
 
 ## T803 — Implement Electron-to-Swift bridge
 
-- [ ] Add `NativeMacOSService` port.
-- [ ] Implement helper process startup.
-- [ ] Use JSON messages over stdin/stdout or a Unix socket.
-- [ ] Add request IDs and timeouts.
-- [ ] Restart or fail gracefully if the helper exits.
-- [ ] Never block the main process waiting indefinitely.
+- [x] Add `NativeMacOSService` port.
+- [x] Implement helper process startup.
+- [x] Use JSON messages over stdin/stdout or a Unix socket.
+- [x] Add request IDs and timeouts.
+- [x] Restart or fail gracefully if the helper exits.
+- [x] Never block the main process waiting indefinitely.
 
 ## T804 — Package and validate the native helper
 

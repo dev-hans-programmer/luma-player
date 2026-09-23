@@ -5,6 +5,7 @@ import { registerWindowSecurity } from './security/security-policy';
 import { logger, registerProcessErrorHandlers } from './services/logger';
 import { MediaAssetService } from './services/media-asset-service';
 import { registerMediaProtocol } from './services/media-protocol';
+import { SwiftNativeMediaService } from './services/native-macos-service';
 import { PlaylistService } from './services/persistence/playlist-service';
 import { PreferencesService } from './services/persistence/preferences-service';
 import { RecentFilesService } from './services/persistence/recent-files-service';
@@ -36,7 +37,8 @@ if (!hasSingleInstanceLock) {
   let isPreparingToQuit = false;
   let isFinalizingQuit = false;
   const recentFiles = new RecentFilesService();
-  const mediaAssetService = new MediaAssetService(recentFiles);
+  const nativeMediaService = new SwiftNativeMediaService();
+  const mediaAssetService = new MediaAssetService(recentFiles, nativeMediaService);
   const preferences = new PreferencesService();
   const resumePositions = new ResumePositionService();
   const playlists = new PlaylistService();
@@ -115,6 +117,7 @@ if (!hasSingleInstanceLock) {
       unregisterIpcHandlers?.();
       unregisterWindowSecurity?.();
       unregisterMediaProtocol?.();
+      nativeMediaService.dispose();
       unregisterProcessErrorHandlers();
       app.quit();
     });

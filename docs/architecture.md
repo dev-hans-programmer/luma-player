@@ -46,6 +46,11 @@ disturb the active playback element.
 
 Swift is not part of the initial playback implementation. It may be added later for capabilities that cannot be implemented reliably in Electron, such as specialized metadata extraction or macOS media integrations. Any helper will communicate through a narrow, typed service boundary and must not be required for ordinary video playback.
 
+The Phase 8 audit found no mandatory capability gap, but an opt-in Swift
+demonstration now exists for AVFoundation metadata probing. It is spawned only
+from the main process, uses request-id JSONL messages, has bounded timeouts,
+and falls back to ffprobe when unavailable. See [decision 0008](decisions/0008-swift-metadata-bridge.md).
+
 ## Security principles
 
 - `nodeIntegration: false`.

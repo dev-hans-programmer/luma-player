@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { dialog, type BrowserWindow } from 'electron';
-import type { MediaAsset, MediaMetadata } from '@luma/domain';
+import type { MediaAsset, MediaMetadata, NativeMediaProbe } from '@luma/domain';
 import { FileAccessError, MediaError } from '@luma/domain';
 import type { RecentFilesService } from './persistence/recent-files-service';
 
@@ -216,11 +216,16 @@ export class MediaAssetService {
   private readonly assets = new Map<string, MediaAsset>();
   private readonly subtitlePaths = new Map<string, Map<string, string>>();
   private readonly recentFiles: RecentFilesService;
+  private readonly nativeMediaProbe: NativeMediaProbe | null;
   private recentHydration: Promise<void> | null = null;
   private activeFolderImport: AbortController | null = null;
 
-  public constructor(recentFiles: RecentFilesService) {
+  public constructor(
+    recentFiles: RecentFilesService,
+    nativeMediaProbe: NativeMediaProbe | null = null,
+  ) {
     this.recentFiles = recentFiles;
+    this.nativeMediaProbe = nativeMediaProbe;
   }
 
   public async openFileDialog(window: BrowserWindow | null): Promise<readonly MediaAsset[]> {
@@ -423,7 +428,18 @@ export class MediaAssetService {
       );
     }
 
-    const fallback = createFallbackMetadata(asset);
+    const nativeMetadata = this.nativeMediaProbe
+      ? await this.nativeMediaProbe.probe(filePath)
+      : null;
+    const fallback = nativeMetadata
+      ? {
+          ...createFallbackMetadata(asset),
+          durationMs: nativeMetadata.durationMs,
+          width: nativeMetadata.width,
+          height: nativeMetadata.height,
+          hasAudio: nativeMetadata.hasAudio,
+        }
+      : createFallbackMetadata(asset);
     const probeResult = await runFfprobe(filePath);
     let metadata = fallback;
 
