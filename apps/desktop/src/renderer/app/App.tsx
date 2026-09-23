@@ -1,17 +1,21 @@
-import { useEffect, useState } from 'react';
-import type { AppCommandId } from '@luma/contracts';
+import { useApplicationState } from '../state/hooks';
 
 export function App(): React.JSX.Element {
-  const [lastCommand, setLastCommand] = useState<AppCommandId | null>(null);
-
-  useEffect(() => window.electronAPI.onMenuCommand(setLastCommand), []);
+  const { appInfo, errorMessage, lastCommand, status } = useApplicationState();
 
   return (
     <main className="app-shell">
       <section className="scaffold-card" aria-labelledby="scaffold-title">
-        <p className="eyebrow">Phase 2 shell</p>
+        <p className="eyebrow">Phase 3 architecture</p>
         <h1 id="scaffold-title">Luma Player</h1>
-        <p>The secure Electron, React, and TypeScript application shell is ready.</p>
+        <p>The domain, IPC, and renderer state boundaries are ready for playback features.</p>
+        <p className="command-status" aria-live="polite">
+          {status === 'ready' && appInfo
+            ? `${appInfo.name} ${appInfo.version}`
+            : status === 'error'
+              ? (errorMessage ?? 'Application initialization failed.')
+              : 'Initializing application services…'}
+        </p>
         <p className="command-status" aria-live="polite">
           {lastCommand
             ? `Last menu command: ${lastCommand}`

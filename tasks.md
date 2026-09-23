@@ -230,65 +230,65 @@ Acceptance criteria:
 
 ## T301 — Define domain entities
 
-- [ ] Define `MediaAsset`.
-- [ ] Define `MediaMetadata`.
-- [ ] Define `PlaybackPosition`.
-- [ ] Define `Playlist` and `PlaylistItem`.
-- [ ] Define `AudioTrack` and `SubtitleTrack`.
-- [ ] Define `PlaybackState`.
+- [x] Define `MediaAsset`.
+- [x] Define `MediaMetadata`.
+- [x] Define `PlaybackPosition`.
+- [x] Define `Playlist` and `PlaylistItem`.
+- [x] Define `AudioTrack` and `SubtitleTrack`.
+- [x] Define `PlaybackState`.
 
 ## T302 — Define domain errors
 
-- [ ] Define typed media errors.
-- [ ] Define file-access errors.
-- [ ] Define validation errors.
-- [ ] Define persistence errors.
-- [ ] Define native-helper errors.
-- [ ] Define user-safe error messages separately from diagnostic details.
+- [x] Define typed media errors.
+- [x] Define file-access errors.
+- [x] Define validation errors.
+- [x] Define persistence errors.
+- [x] Define native-helper errors.
+- [x] Define user-safe error messages separately from diagnostic details.
 
 ## T303 — Define ports and interfaces
 
-- [ ] Define media repository port.
-- [ ] Define preferences repository port.
-- [ ] Define recent-files repository port.
-- [ ] Define native macOS service port.
-- [ ] Define window-control port.
-- [ ] Define playback event port.
+- [x] Define media repository port.
+- [x] Define preferences repository port.
+- [x] Define recent-files repository port.
+- [x] Define native macOS service port.
+- [x] Define window-control port.
+- [x] Define playback event port.
 
 ## T304 — Define IPC contracts
 
-- [ ] Define request and response types.
-- [ ] Define event payloads.
-- [ ] Define IPC channel names as constants.
-- [ ] Define error serialization.
-- [ ] Define runtime validation schemas.
-- [ ] Add tests for valid and invalid payloads.
+- [x] Define request and response types.
+- [x] Define event payloads.
+- [x] Define IPC channel names as constants.
+- [x] Define error serialization.
+- [x] Define runtime validation schemas.
+- [x] Add tests for valid and invalid payloads.
 
 ## T305 — Implement IPC registration
 
-- [ ] Register IPC handlers in one controlled location.
-- [ ] Validate every request before use.
-- [ ] Validate the sender for every privileged request.
-- [ ] Prevent duplicate handler registration.
-- [ ] Keep handlers thin and delegate to application services.
+- [x] Register IPC handlers in one controlled location.
+- [x] Validate every request before use.
+- [x] Validate the sender for every privileged request.
+- [x] Prevent duplicate handler registration.
+- [x] Keep handlers thin and delegate to application services.
 
 ## T306 — Define renderer state boundaries
 
-- [ ] Define application state.
-- [ ] Define playback state.
-- [ ] Define UI state.
-- [ ] Define settings state.
-- [ ] Define event subscription cleanup.
-- [ ] Prevent high-frequency playback events from rerendering unrelated UI.
+- [x] Define application state.
+- [x] Define playback state.
+- [x] Define UI state.
+- [x] Define settings state.
+- [x] Define event subscription cleanup.
+- [x] Prevent high-frequency playback events from rerendering unrelated UI.
 
 ## T307 — Write architecture documentation
 
-- [ ] Document process boundaries.
-- [ ] Document dependency direction.
-- [ ] Document IPC flow.
-- [ ] Document media loading flow.
-- [ ] Document error flow.
-- [ ] Document how to add a new feature safely.
+- [x] Document process boundaries.
+- [x] Document dependency direction.
+- [x] Document IPC flow.
+- [x] Document media loading flow.
+- [x] Document error flow.
+- [x] Document how to add a new feature safely.
 
 ---
 

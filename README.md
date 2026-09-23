@@ -25,7 +25,10 @@ Video editing, transcoding, cloud synchronization, media-server browsing, networ
 
 ## Project status
 
-Phase 2 is complete. The secure Electron application shell, typed preload bridge, window lifecycle, menus, diagnostics, navigation policy, and renderer error handling are in place. Media protocol and playback work begin in Phase 3/4. Electron Forge packaging remains intentionally deferred to Phase 11.
+Phase 3 is complete. The secure Electron application shell, typed preload bridge,
+domain entities and ports, runtime-validated IPC contracts, isolated renderer
+stores, window lifecycle, menus, diagnostics, navigation policy, and renderer
+error handling are in place. Media protocol and playback work begin in Phase 4. Electron Forge packaging remains intentionally deferred to Phase 11.
 
 Run the development scaffold with:
 

@@ -49,4 +49,75 @@ Swift is not part of the initial playback implementation. It may be added later 
 - Restrictive Content Security Policy.
 - Controlled custom protocols instead of exposing arbitrary filesystem paths.
 
-This document will be expanded during Phase 3 when the concrete contracts and dependency graph are implemented.
+## Concrete dependency graph
+
+```text
+packages/domain
+    ▲
+    │ types and ports only
+    ├── packages/contracts       IPC names, payload types, validators
+    ├── main application services Electron adapters and IPC handlers
+    └── renderer state           React-facing stores and presentation state
+```
+
+The dependency rule is intentionally one-way:
+
+- Domain entities, errors, and ports do not import Electron, Node.js, or React.
+- Contracts do not import Electron. They are safe to share with preload and
+  renderer code.
+- Main-process adapters implement domain ports and are the only layer allowed
+  to access filesystem, dialogs, BrowserWindow, or native helpers.
+- Renderer code consumes contracts and domain state, but never imports main
+  services or infrastructure adapters.
+
+## IPC flow
+
+1. A renderer feature calls one explicit method on `window.electronAPI`.
+2. The preload bridge forwards only the named channel and typed payload.
+3. The main IPC registry validates the request and the sender window.
+4. A thin handler delegates to an application service or domain port.
+5. Responses contain contract-safe data. Errors are serialized to a stable
+   code and user message; paths, stacks, and diagnostic details remain in the
+   main-process logger.
+
+Every invoke channel has a request and response entry in
+`packages/contracts/src/index.ts`. Empty requests are still validated so a
+renderer cannot smuggle unexpected data into a privileged handler.
+
+## Media loading flow
+
+The renderer will request an asset through a future application use case. The
+main process validates the selected file, stores an opaque `MediaAssetId`, and
+serves the validated file through the controlled `media://` protocol. The
+renderer receives the opaque identifier and never receives a filesystem path.
+Metadata loading and persistence use domain repository ports, keeping them off
+the playback-critical path.
+
+## Renderer state boundaries
+
+The renderer has separate external stores for application, playback, UI, and
+settings state. Components subscribe only to the store they render. Playback
+time/progress updates therefore notify playback subscribers without rerendering
+the shell, settings, or sidebar. Event subscriptions are created at the
+provider boundary and always return their cleanup function.
+
+## Error flow
+
+Infrastructure errors become typed domain errors with a diagnostic message and
+a user-safe message. Main-process logs retain diagnostic context after path
+redaction. IPC exposes only the error code and safe message. Renderer error
+boundaries report failures through the same validated channel and render a
+recoverable fallback state.
+
+## Adding a feature safely
+
+1. Define or extend a domain entity, error, or port if the behavior is a
+   business concept.
+2. Add an IPC request/response/event contract and runtime validator when a
+   process boundary is involved.
+3. Implement the use case or adapter in the main process, keeping the IPC
+   handler thin.
+4. Add a focused renderer store or selector instead of placing fast-changing
+   state in a global React provider.
+5. Add unit tests for validation and domain behavior, then run the complete
+   typecheck, lint, test, and build gates.
