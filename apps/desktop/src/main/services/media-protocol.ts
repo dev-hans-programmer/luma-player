@@ -50,6 +50,15 @@ function getAssetId(requestUrl: string): string | null {
   }
 }
 
+function getSubtitleTrackId(requestUrl: string): string | null {
+  try {
+    const value = new URL(requestUrl).searchParams.get('subtitle');
+    return value && value.length > 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 function createStreamBody(filePath: string, range: ByteRange | null): BodyInit {
   const stream = range
     ? createReadStream(filePath, { start: range.start, end: range.end })
@@ -68,7 +77,10 @@ export function registerMediaProtocol(assetService: MediaAssetService): () => vo
       return new Response('Not Found', { status: 404 });
     }
 
-    const filePath = assetService.getAssetPath(assetId);
+    const subtitleTrackId = getSubtitleTrackId(request.url);
+    const filePath = subtitleTrackId
+      ? assetService.getSubtitlePath(assetId, subtitleTrackId)
+      : assetService.getAssetPath(assetId);
 
     if (!filePath) {
       return new Response('Not Found', { status: 404 });
@@ -97,7 +109,9 @@ export function registerMediaProtocol(assetService: MediaAssetService): () => vo
         'Accept-Ranges': 'bytes',
         'Cache-Control': 'no-store',
         'Content-Length': String(contentLength),
-        'Content-Type': assetService.getAsset(assetId)?.mimeType ?? 'application/octet-stream',
+        'Content-Type': subtitleTrackId
+          ? 'text/vtt; charset=utf-8'
+          : (assetService.getAsset(assetId)?.mimeType ?? 'application/octet-stream'),
       });
 
       if (range) {
@@ -118,4 +132,4 @@ export function registerMediaProtocol(assetService: MediaAssetService): () => vo
   };
 }
 
-export { getAssetId, parseRangeHeader };
+export { getAssetId, getSubtitleTrackId, parseRangeHeader };

@@ -25,6 +25,36 @@ const INITIAL_STATE: PlaybackState = {
 
 const HIGH_FREQUENCY_THROTTLE_MS = 50;
 
+export const PLAYBACK_SPEED_PRESETS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4] as const;
+
+interface AudioTrackLike {
+  readonly id?: string;
+  readonly label?: string;
+  readonly language?: string;
+  enabled: boolean;
+}
+
+interface AudioTrackListLike {
+  readonly length: number;
+  readonly [index: number]: AudioTrackLike;
+}
+
+interface TextTrackLike {
+  readonly id?: string;
+  readonly label?: string;
+  readonly language?: string;
+  mode: 'disabled' | 'hidden' | 'showing';
+}
+
+interface TextTrackListLike {
+  readonly length: number;
+  readonly [index: number]: TextTrackLike;
+}
+
+type VideoElementWithTracks = HTMLVideoElement & {
+  readonly audioTracks?: AudioTrackListLike;
+};
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
@@ -186,6 +216,53 @@ export class PlaybackController {
   public setLooping(isLooping: boolean): void {
     this.requireElement().loop = isLooping;
     this.updateState({ isLooping });
+  }
+
+  public setAudioTrack(trackId: string): boolean {
+    const tracks = (this.requireElement() as VideoElementWithTracks).audioTracks;
+    if (!tracks) {
+      return false;
+    }
+
+    let matched = false;
+    for (let index = 0; index < tracks.length; index += 1) {
+      const track = tracks[index];
+      if (!track) {
+        continue;
+      }
+      const id = track.id || `audio-${index}`;
+      track.enabled = id === trackId;
+      matched = matched || id === trackId;
+    }
+    return matched;
+  }
+
+  public setSubtitleTrack(trackId: string | null): boolean {
+    const tracks = (this.requireElement() as HTMLVideoElement).textTracks as
+      TextTrackListLike | undefined;
+    if (!tracks) {
+      return false;
+    }
+
+    let matched = trackId === null;
+    for (let index = 0; index < tracks.length; index += 1) {
+      const track = tracks[index];
+      if (!track) {
+        continue;
+      }
+      const id = track.id || `subtitle-${index}`;
+      const isSelected = trackId !== null && id === trackId;
+      track.mode = isSelected ? 'showing' : 'disabled';
+      matched = matched || isSelected;
+    }
+    return matched;
+  }
+
+  public supportsPictureInPicture(): boolean {
+    const element = this.requireElement() as HTMLVideoElement & {
+      requestPictureInPicture?: () => Promise<unknown>;
+    };
+    return Boolean(document.pictureInPictureEnabled && element.requestPictureInPicture);
   }
 
   public async requestFullscreen(): Promise<void> {

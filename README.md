@@ -25,12 +25,16 @@ Video editing, transcoding, cloud synchronization, media-server browsing, networ
 
 ## Project status
 
-Phase 6 is implemented. The secure Electron application shell, typed preload
+Phase 7 is implemented. The secure Electron application shell, typed preload
 bridge, domain entities and ports, runtime-validated IPC contracts, isolated
 renderer stores, secure local-file registration, range-capable `media://`
 streaming, optional metadata probing, playback controller, responsive player
 interface, keyboard controls, timeline, preferences, recent files, resume
 playback, playlists, and cancellable folder import are in place.
+Advanced speed/repeat controls, protected WebVTT sidecars, audio/subtitle
+track menus, chapters, thumbnail scrubbing previews, and Picture in Picture
+capability handling are also in place. macOS Now Playing/media-key integration
+is intentionally deferred; see [`docs/decisions/0006-macos-media-controls-scope.md`](docs/decisions/0006-macos-media-controls-scope.md).
 Manual VoiceOver verification remains a release validation step. Electron
 Forge packaging remains intentionally deferred to Phase 11.
 

@@ -34,6 +34,14 @@ The initial playback path is an HTML video element in the renderer backed by a c
 
 The playback-critical path must avoid synchronous filesystem work, full-file buffering, and high-frequency whole-tree React updates.
 
+Advanced playback stays on the same controller boundary. Speed and repeat
+changes mutate the media element directly, while track selection uses browser
+native audio/text tracks when available. External WebVTT sidecars are exposed
+through validated `media://` URLs; filesystem paths never cross into React.
+Chapter seeking comes from metadata, and timeline thumbnails use a separate
+muted media element with quantized in-memory caching so scrubbing does not
+disturb the active playback element.
+
 ## Native macOS boundary
 
 Swift is not part of the initial playback implementation. It may be added later for capabilities that cannot be implemented reliably in Electron, such as specialized metadata extraction or macOS media integrations. Any helper will communicate through a narrow, typed service boundary and must not be required for ordinary video playback.

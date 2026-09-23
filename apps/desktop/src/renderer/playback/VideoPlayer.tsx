@@ -2,15 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import type { MediaAssetPayload } from '@luma/contracts';
 import { applicationStore } from '../state/app-state';
 import { playbackStore } from '../state/playback-state';
-import { usePlaybackState, useSettingsState } from '../state/hooks';
-import { PlaybackController } from './playback-controller';
+import { useApplicationState, usePlaybackState, useSettingsState } from '../state/hooks';
+import { PLAYBACK_SPEED_PRESETS, PlaybackController } from './playback-controller';
 import { setActivePlaybackController } from './playback-controller-registry';
+
+type RepeatMode = 'off' | 'one' | 'playlist';
 
 interface VideoPlayerProps {
   readonly asset: MediaAssetPayload;
   readonly onChooseAnother: () => void;
   readonly onPrevious: (() => void) | undefined;
   readonly onNext: (() => void) | undefined;
+  readonly onPlaybackEnded: (() => void) | undefined;
 }
 
 export function VideoPlayer({
@@ -18,25 +21,43 @@ export function VideoPlayer({
   onChooseAnother,
   onPrevious,
   onNext,
+  onPlaybackEnded,
 }: VideoPlayerProps): React.JSX.Element {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controllerRef = useRef<PlaybackController | null>(null);
   const sourceRef = useRef<string | null>(null);
   const playbackState = usePlaybackState();
+  const { activeMetadata } = useApplicationState();
   const settings = useSettingsState();
   const settingsRef = useRef(settings);
   const assetIdRef = useRef(asset.id);
   const pendingResumeRef = useRef<number | null>(null);
   const lastSavedPositionRef = useRef({ positionMs: 0, savedAt: 0 });
   const autoplayAssetRef = useRef<string | null>(null);
+  const repeatModeRef = useRef<RepeatMode>('off');
+  const onPlaybackEndedRef = useRef(onPlaybackEnded);
+  const thumbnailVideoRef = useRef<HTMLVideoElement | null>(null);
+  const thumbnailCacheRef = useRef(new Map<string, string>());
+  const thumbnailRequestRef = useRef(0);
+  const thumbnailTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubValue, setScrubValue] = useState<number | null>(null);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
+  const [customRate, setCustomRate] = useState('');
+  const [isPictureInPictureSupported, setIsPictureInPictureSupported] = useState(false);
+  const [subtitleSources, setSubtitleSources] = useState<Readonly<Record<string, string>>>({});
+  const [thumbnailPreview, setThumbnailPreview] = useState<{
+    readonly dataUrl: string;
+    readonly positionMs: number;
+  } | null>(null);
   const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   settingsRef.current = settings;
   assetIdRef.current = asset.id;
+  repeatModeRef.current = repeatMode;
+  onPlaybackEndedRef.current = onPlaybackEnded;
 
   const savePlaybackPosition = (force = false, requestedAssetId = assetIdRef.current): void => {
     const currentSettings = settingsRef.current;
@@ -122,6 +143,7 @@ export function VideoPlayer({
     controller.attach(video);
     controller.setVolume(settingsRef.current.preferredVolume);
     controller.setPlaybackRate(settingsRef.current.preferredPlaybackRate);
+    setIsPictureInPictureSupported(controller.supportsPictureInPicture());
     controllerRef.current = controller;
     const removeActiveController = setActivePlaybackController(controller);
     const removeListener = controller.subscribe((event) => {
@@ -156,6 +178,9 @@ export function VideoPlayer({
 
       if (event.type === 'ended') {
         void window.electronAPI.removePlaybackPosition(assetIdRef.current).catch(() => undefined);
+        if (repeatModeRef.current === 'playlist') {
+          onPlaybackEndedRef.current?.();
+        }
       }
     });
 
@@ -190,6 +215,13 @@ export function VideoPlayer({
     pendingResumeRef.current = null;
     lastSavedPositionRef.current = { positionMs: 0, savedAt: 0 };
     autoplayAssetRef.current = null;
+    thumbnailCacheRef.current.clear();
+    thumbnailRequestRef.current += 1;
+    if (thumbnailTimerRef.current) {
+      clearTimeout(thumbnailTimerRef.current);
+      thumbnailTimerRef.current = null;
+    }
+    setThumbnailPreview(null);
 
     void Promise.all([
       window.electronAPI.getMediaSource(asset.id),
@@ -204,6 +236,10 @@ export function VideoPlayer({
 
         pendingResumeRef.current = savedPosition?.positionMs ?? null;
         sourceRef.current = source;
+        if (thumbnailVideoRef.current) {
+          thumbnailVideoRef.current.src = source;
+          thumbnailVideoRef.current.load();
+        }
         controller.load(asset.id, source);
         return window.electronAPI.getMediaMetadata(asset.id);
       })
@@ -245,6 +281,39 @@ export function VideoPlayer({
     controller.setPlaybackRate(settings.preferredPlaybackRate);
   }, [settings.preferredPlaybackRate, settings.preferredVolume]);
 
+  useEffect(() => {
+    let cancelled = false;
+    setSubtitleSources({});
+    const externalTracks =
+      activeMetadata?.subtitleTracks.filter((track) => track.kind === 'external') ?? [];
+
+    void Promise.all(
+      externalTracks.map(async (track) => {
+        try {
+          return [
+            track.id,
+            await window.electronAPI.getSubtitleSource(asset.id, track.id),
+          ] as const;
+        } catch {
+          return null;
+        }
+      }),
+    ).then((entries) => {
+      if (cancelled) {
+        return;
+      }
+      setSubtitleSources(
+        Object.fromEntries(
+          entries.filter((entry): entry is readonly [string, string] => entry !== null),
+        ),
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeMetadata, asset.id]);
+
   const togglePlayback = (): void => {
     void controllerRef.current?.togglePlayback().catch(() => undefined);
   };
@@ -266,6 +335,51 @@ export function VideoPlayer({
     scheduleControlsHide();
   };
 
+  const requestThumbnail = (positionMs: number): void => {
+    const video = thumbnailVideoRef.current;
+    if (!video || durationMs <= 0) {
+      return;
+    }
+
+    const safePositionMs = Math.min(Math.max(0, positionMs), durationMs);
+    const cacheKey = `${asset.id}:${Math.round(safePositionMs / 5_000)}`;
+    const cachedDataUrl = thumbnailCacheRef.current.get(cacheKey);
+    if (cachedDataUrl) {
+      setThumbnailPreview({ dataUrl: cachedDataUrl, positionMs: safePositionMs });
+      return;
+    }
+
+    const requestId = thumbnailRequestRef.current + 1;
+    thumbnailRequestRef.current = requestId;
+    if (thumbnailTimerRef.current) {
+      clearTimeout(thumbnailTimerRef.current);
+    }
+    const drawPreview = (): void => {
+      if (thumbnailRequestRef.current !== requestId || video.readyState < 2) {
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      const width = 192;
+      const height = Math.max(
+        96,
+        Math.round((video.videoHeight / Math.max(1, video.videoWidth)) * width),
+      );
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d')?.drawImage(video, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+      thumbnailCacheRef.current.set(cacheKey, dataUrl);
+      setThumbnailPreview({ dataUrl, positionMs: safePositionMs });
+    };
+
+    thumbnailTimerRef.current = setTimeout(() => {
+      thumbnailTimerRef.current = null;
+      video.addEventListener('seeked', drawPreview, { once: true });
+      video.currentTime = safePositionMs / 1000;
+    }, 70);
+  };
+
   const handleVolume = (value: number): void => {
     controllerRef.current?.setVolume(value);
   };
@@ -278,10 +392,23 @@ export function VideoPlayer({
     controllerRef.current?.setMuted(!playbackState.isMuted);
   };
 
-  const toggleLoop = (): void => {
-    controllerRef.current?.setLooping(!playbackState.isLooping);
+  const changeRepeatMode = (mode: RepeatMode): void => {
+    setRepeatMode(mode);
+    controllerRef.current?.setLooping(mode === 'one');
     setIsMoreMenuOpen(false);
   };
+
+  const handleCustomRate = (): void => {
+    const rate = Number(customRate);
+    if (Number.isFinite(rate) && rate >= 0.25 && rate <= 4) {
+      handlePlaybackRate(rate);
+      setCustomRate('');
+    }
+  };
+
+  const currentChapter = activeMetadata?.chapters.find(
+    (chapter) => currentTimeMs >= chapter.startMs && currentTimeMs < chapter.endMs,
+  );
 
   return (
     <section
@@ -307,10 +434,24 @@ export function VideoPlayer({
         aria-label={asset.displayName}
         onClick={togglePlayback}
         onDoubleClick={() => void controllerRef.current?.requestFullscreen()}
-      />
+      >
+        {activeMetadata?.subtitleTracks.map((track) => {
+          const source = subtitleSources[track.id];
+          return source ? (
+            <track key={track.id} kind="subtitles" label={track.label} src={source} id={track.id} />
+          ) : null;
+        })}
+      </video>
       <div className={`player-status status-${playbackState.status}`} aria-live="polite">
         {playbackState.status === 'error' ? playbackState.errorMessage : playbackState.status}
       </div>
+      <video
+        ref={thumbnailVideoRef}
+        className="thumbnail-source"
+        muted
+        preload="metadata"
+        aria-hidden="true"
+      />
       <div className="player-controls" aria-label="Playback controls">
         <div className="timeline-row">
           <span className="time-label">{formatTime(currentTimeMs)}</span>
@@ -338,6 +479,19 @@ export function VideoPlayer({
                 setIsScrubbing(true);
                 setControlsVisible(true);
               }}
+              onPointerMove={(event) => {
+                const bounds = event.currentTarget.getBoundingClientRect();
+                const ratio = (event.clientX - bounds.left) / Math.max(1, bounds.width);
+                requestThumbnail(ratio * durationMs);
+              }}
+              onPointerLeave={() => {
+                thumbnailRequestRef.current += 1;
+                if (thumbnailTimerRef.current) {
+                  clearTimeout(thumbnailTimerRef.current);
+                  thumbnailTimerRef.current = null;
+                }
+                setThumbnailPreview(null);
+              }}
               onChange={(event) => handleSeek(Number(event.target.value))}
               onPointerUp={handleSeekCommit}
               onKeyUp={(event) => {
@@ -347,8 +501,19 @@ export function VideoPlayer({
               }}
               disabled={durationMs <= 0}
             />
+            {thumbnailPreview ? (
+              <img
+                className="thumbnail-preview"
+                src={thumbnailPreview.dataUrl}
+                alt={`Preview at ${formatTime(thumbnailPreview.positionMs)}`}
+                style={{
+                  left: `${Math.min(100, Math.max(0, (thumbnailPreview.positionMs / durationMs) * 100))}%`,
+                }}
+              />
+            ) : null}
           </div>
           <span className="time-label">{formatTime(durationMs)}</span>
+          {currentChapter ? <span className="chapter-label">{currentChapter.title}</span> : null}
         </div>
         <div className="player-toolbar">
           <button type="button" className="control-button primary-control" onClick={togglePlayback}>
@@ -417,7 +582,7 @@ export function VideoPlayer({
             aria-label="Playback speed"
             onChange={(event) => handlePlaybackRate(Number(event.target.value))}
           >
-            {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
+            {PLAYBACK_SPEED_PRESETS.map((rate) => (
               <option key={rate} value={rate}>
                 {rate}×
               </option>
@@ -427,6 +592,7 @@ export function VideoPlayer({
             type="button"
             className="control-button"
             onClick={() => void controllerRef.current?.requestPictureInPicture()}
+            disabled={!isPictureInPictureSupported}
             aria-label="Picture in Picture"
           >
             ⧉
@@ -450,9 +616,90 @@ export function VideoPlayer({
           </button>
           {isMoreMenuOpen ? (
             <div className="more-menu" role="menu">
-              <button type="button" role="menuitem" onClick={toggleLoop}>
-                {playbackState.isLooping ? 'Disable loop' : 'Enable loop'}
-              </button>
+              <label className="menu-field">
+                Speed
+                <input
+                  type="number"
+                  min={0.25}
+                  max={4}
+                  step={0.05}
+                  placeholder="Custom ×"
+                  value={customRate}
+                  onChange={(event) => setCustomRate(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      handleCustomRate();
+                    }
+                  }}
+                />
+                <button type="button" onClick={handleCustomRate} disabled={!customRate}>
+                  Apply
+                </button>
+              </label>
+              <div className="menu-group" aria-label="Repeat mode">
+                <span>Repeat</span>
+                <button type="button" role="menuitem" onClick={() => changeRepeatMode('off')}>
+                  {repeatMode === 'off' ? '✓ ' : ''}Off
+                </button>
+                <button type="button" role="menuitem" onClick={() => changeRepeatMode('one')}>
+                  {repeatMode === 'one' ? '✓ ' : ''}Repeat one
+                </button>
+                <button type="button" role="menuitem" onClick={() => changeRepeatMode('playlist')}>
+                  {repeatMode === 'playlist' ? '✓ ' : ''}Repeat playlist
+                </button>
+              </div>
+              {activeMetadata?.audioTracks.length ? (
+                <div className="menu-group" aria-label="Audio tracks">
+                  <span>Audio</span>
+                  {activeMetadata.audioTracks.map((track) => (
+                    <button
+                      key={track.id}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => controllerRef.current?.setAudioTrack(track.id)}
+                    >
+                      {track.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {activeMetadata?.subtitleTracks.length ? (
+                <div className="menu-group" aria-label="Subtitle tracks">
+                  <span>Subtitles</span>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => controllerRef.current?.setSubtitleTrack(null)}
+                  >
+                    Off
+                  </button>
+                  {activeMetadata.subtitleTracks.map((track) => (
+                    <button
+                      key={track.id}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => controllerRef.current?.setSubtitleTrack(track.id)}
+                    >
+                      {track.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {activeMetadata?.chapters.length ? (
+                <div className="menu-group" aria-label="Chapters">
+                  <span>Chapters</span>
+                  {activeMetadata.chapters.map((chapter) => (
+                    <button
+                      key={chapter.id}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => controllerRef.current?.seek(chapter.startMs)}
+                    >
+                      {chapter.title}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               <button type="button" role="menuitem" onClick={retry} disabled={!sourceRef.current}>
                 Retry media
               </button>

@@ -566,54 +566,54 @@ Acceptance criteria:
 
 ## T701 — Playback speed and looping
 
-- [ ] Add speed presets.
-- [ ] Add custom speed if desired.
-- [ ] Add repeat-one.
-- [ ] Add repeat-playlist.
+- [x] Add speed presets.
+- [x] Add custom speed if desired.
+- [x] Add repeat-one.
+- [x] Add repeat-playlist.
 - [ ] Add AB loop only if confirmed in scope.
 
 ## T702 — Subtitle support
 
-- [ ] Detect subtitle tracks.
-- [ ] Display subtitle menu.
-- [ ] Select and disable tracks.
+- [x] Detect subtitle tracks.
+- [x] Display subtitle menu.
+- [x] Select and disable tracks.
 - [ ] Add subtitle styling preferences if supported.
-- [ ] Handle missing subtitle resources.
+- [x] Handle missing subtitle resources.
 
 ## T703 — Audio track support
 
-- [ ] Detect audio tracks.
-- [ ] Display audio track menu.
-- [ ] Change active track.
-- [ ] Handle unsupported track changes.
+- [x] Detect audio tracks.
+- [x] Display audio track menu.
+- [x] Change active track.
+- [x] Handle unsupported track changes.
 
 ## T704 — Chapter support
 
-- [ ] Detect chapters.
-- [ ] Display chapter list.
-- [ ] Seek to chapter.
-- [ ] Display current chapter.
+- [x] Detect chapters.
+- [x] Display chapter list.
+- [x] Seek to chapter.
+- [x] Display current chapter.
 
 ## T705 — Thumbnail timeline previews
 
-- [ ] Define thumbnail generation strategy.
-- [ ] Generate thumbnails off the playback path.
-- [ ] Cache thumbnails.
-- [ ] Cancel obsolete thumbnail requests.
-- [ ] Display thumbnails while scrubbing.
+- [x] Define thumbnail generation strategy.
+- [x] Generate thumbnails off the playback path.
+- [x] Cache thumbnails.
+- [x] Cancel obsolete thumbnail requests.
+- [x] Display thumbnails while scrubbing.
 
 ## T706 — Picture in Picture
 
-- [ ] Implement capability detection.
-- [ ] Add Picture in Picture action.
-- [ ] Handle unsupported media gracefully.
-- [ ] Test entering and leaving Picture in Picture.
+- [x] Implement capability detection.
+- [x] Add Picture in Picture action.
+- [x] Handle unsupported media gracefully.
+- [~] Test entering and leaving Picture in Picture.
 
 ## T707 — macOS media controls
 
-- [ ] Decide whether media-key support is required.
-- [ ] Decide whether Now Playing integration is required.
-- [ ] Implement only after the core player is stable.
+- [x] Decide whether media-key support is required.
+- [x] Decide whether Now Playing integration is required.
+- [~] Implement only after the core player is stable.
 - [ ] Add integration tests where possible.
 
 ---

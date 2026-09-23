@@ -166,6 +166,12 @@ export function App(): React.JSX.Element {
               onChooseAnother={handleOpenFile}
               onPrevious={previousItem ? () => openPlaylistItem(previousItem) : undefined}
               onNext={nextItem ? () => openPlaylistItem(nextItem) : undefined}
+              onPlaybackEnded={() => {
+                const repeatItem = nextItem ?? activePlaylist?.items[0] ?? null;
+                if (repeatItem) {
+                  openPlaylistItem(repeatItem);
+                }
+              }}
             />
           ) : (
             <div className="drop-target">

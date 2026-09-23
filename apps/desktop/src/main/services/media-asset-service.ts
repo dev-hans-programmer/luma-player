@@ -25,6 +25,9 @@ const SUPPORTED_EXTENSIONS = [
   'wmv',
 ] as const;
 
+const EXTERNAL_SUBTITLE_EXTENSION = 'vtt';
+const EXTERNAL_SUBTITLE_TRACK_ID = 'subtitle-external-vtt';
+
 const MIME_TYPES: Readonly<Record<string, string>> = {
   aac: 'audio/aac',
   avi: 'video/x-msvideo',
@@ -211,6 +214,7 @@ function runFfprobe(filePath: string): Promise<FfprobeResult | null> {
 export class MediaAssetService {
   private readonly assetPaths = new Map<string, string>();
   private readonly assets = new Map<string, MediaAsset>();
+  private readonly subtitlePaths = new Map<string, Map<string, string>>();
   private readonly recentFiles: RecentFilesService;
   private recentHydration: Promise<void> | null = null;
   private activeFolderImport: AbortController | null = null;
@@ -385,6 +389,24 @@ export class MediaAssetService {
     return `media://${encodeURIComponent(assetId)}`;
   }
 
+  public async getSubtitleSource(assetId: string, trackId: string): Promise<string> {
+    await this.loadExternalSubtitle(assetId);
+    const subtitlePath = this.getSubtitlePath(assetId, trackId);
+    if (!subtitlePath) {
+      throw new FileAccessError(
+        'file.not-found',
+        `No subtitle track ${trackId} exists for asset ${assetId}.`,
+        'This subtitle track is no longer available.',
+      );
+    }
+
+    return `media://${encodeURIComponent(assetId)}?subtitle=${encodeURIComponent(trackId)}`;
+  }
+
+  public getSubtitlePath(assetId: string, trackId: string): string | null {
+    return this.subtitlePaths.get(assetId)?.get(trackId) ?? null;
+  }
+
   public getAsset(assetId: string): MediaAsset | null {
     return this.assets.get(assetId) ?? null;
   }
@@ -403,21 +425,36 @@ export class MediaAssetService {
 
     const fallback = createFallbackMetadata(asset);
     const probeResult = await runFfprobe(filePath);
+    let metadata = fallback;
 
-    if (!probeResult) {
-      return fallback;
+    if (probeResult) {
+      try {
+        metadata = parseFfprobeMetadata(probeResult, fallback);
+      } catch (error) {
+        throw new MediaError(
+          'media.load-failed',
+          `Metadata parsing failed for ${filePath}.`,
+          'Media metadata could not be read, but playback may still be available.',
+          { cause: error },
+        );
+      }
     }
 
-    try {
-      return parseFfprobeMetadata(probeResult, fallback);
-    } catch (error) {
-      throw new MediaError(
-        'media.load-failed',
-        `Metadata parsing failed for ${filePath}.`,
-        'Media metadata could not be read, but playback may still be available.',
-        { cause: error },
-      );
-    }
+    const externalSubtitle = await this.loadExternalSubtitle(assetId);
+    return externalSubtitle
+      ? {
+          ...metadata,
+          subtitleTracks: [
+            ...metadata.subtitleTracks,
+            {
+              id: EXTERNAL_SUBTITLE_TRACK_ID,
+              label: 'External subtitles',
+              language: null,
+              kind: 'external' as const,
+            },
+          ],
+        }
+      : metadata;
   }
 
   private async registerFile(
@@ -509,6 +546,26 @@ export class MediaAssetService {
     }
 
     await this.recentHydration;
+  }
+
+  private async loadExternalSubtitle(assetId: string): Promise<string | null> {
+    const filePath = this.assetPaths.get(assetId);
+    if (!filePath) {
+      return null;
+    }
+
+    const subtitlePath = `${filePath.slice(0, -path.extname(filePath).length)}.${EXTERNAL_SUBTITLE_EXTENSION}`;
+    try {
+      const stats = await fs.stat(subtitlePath);
+      if (!stats.isFile()) {
+        return null;
+      }
+      this.subtitlePaths.set(assetId, new Map([[EXTERNAL_SUBTITLE_TRACK_ID, subtitlePath]]));
+      return subtitlePath;
+    } catch {
+      this.subtitlePaths.delete(assetId);
+      return null;
+    }
   }
 }
 

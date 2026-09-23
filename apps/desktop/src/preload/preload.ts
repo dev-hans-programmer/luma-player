@@ -30,6 +30,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.mediaGetSource, { assetId }),
   getMediaMetadata: (assetId: string): Promise<MediaMetadataPayload> =>
     ipcRenderer.invoke(IPC_CHANNELS.mediaGetMetadata, { assetId }),
+  getSubtitleSource: (assetId: string, trackId: string): Promise<string> =>
+    ipcRenderer.invoke(IPC_CHANNELS.mediaGetSubtitleSource, { assetId, trackId }),
   importFolder: (): Promise<readonly MediaAssetPayload[]> =>
     ipcRenderer.invoke(IPC_CHANNELS.mediaImportFolder),
   cancelFolderImport: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.mediaCancelFolderImport),

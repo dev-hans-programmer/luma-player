@@ -10,6 +10,7 @@ export const IPC_CHANNELS = {
   mediaImportFolderProgress: 'media:folder-import-progress',
   mediaGetSource: 'media:get-source',
   mediaGetMetadata: 'media:get-metadata',
+  mediaGetSubtitleSource: 'media:get-subtitle-source',
   preferencesGet: 'preferences:get',
   preferencesSave: 'preferences:save',
   resumeGet: 'resume:get',
@@ -141,6 +142,7 @@ export interface IpcRequestMap {
   readonly 'media:cancel-folder-import': undefined;
   readonly 'media:get-source': { readonly assetId: string };
   readonly 'media:get-metadata': { readonly assetId: string };
+  readonly 'media:get-subtitle-source': { readonly assetId: string; readonly trackId: string };
   readonly 'preferences:get': undefined;
   readonly 'preferences:save': PlayerPreferencesPayload;
   readonly 'resume:get': { readonly assetId: string };
@@ -168,6 +170,7 @@ export interface IpcResponseMap {
   readonly 'media:cancel-folder-import': void;
   readonly 'media:get-source': string;
   readonly 'media:get-metadata': MediaMetadataPayload;
+  readonly 'media:get-subtitle-source': string;
   readonly 'preferences:get': PlayerPreferencesPayload;
   readonly 'preferences:save': void;
   readonly 'resume:get': PlaybackPositionPayload | null;
@@ -214,6 +217,7 @@ export interface ElectronAPI {
   ) => Promise<readonly MediaAssetPayload[]>;
   readonly getMediaSource: (assetId: string) => Promise<string>;
   readonly getMediaMetadata: (assetId: string) => Promise<MediaMetadataPayload>;
+  readonly getSubtitleSource: (assetId: string, trackId: string) => Promise<string>;
   readonly importFolder: () => Promise<readonly MediaAssetPayload[]>;
   readonly cancelFolderImport: () => Promise<void>;
   readonly onFolderImportProgress: (
@@ -319,6 +323,22 @@ export function validateAssetIdRequest(
   }
 
   return { success: true, data: { assetId: value.assetId } };
+}
+
+export function validateSubtitleTrackRequest(
+  value: unknown,
+): ValidationResult<{ readonly assetId: string; readonly trackId: string }> {
+  if (
+    !isRecord(value) ||
+    typeof value.assetId !== 'string' ||
+    value.assetId.trim().length === 0 ||
+    typeof value.trackId !== 'string' ||
+    value.trackId.trim().length === 0
+  ) {
+    return { success: false, message: 'A media asset id and subtitle track id are required.' };
+  }
+
+  return { success: true, data: { assetId: value.assetId, trackId: value.trackId } };
 }
 
 export function validatePlaylistIdRequest(

@@ -18,6 +18,7 @@ import {
   validatePlaylistPayload,
   validatePreferencesPayload,
   validateRendererErrorPayload,
+  validateSubtitleTrackRequest,
 } from '@luma/contracts';
 import { logger } from '../services/logger';
 import type { MediaAssetService } from '../services/media-asset-service';
@@ -174,6 +175,25 @@ export function registerIpcHandlers(
     }
     try {
       return await mediaAssetService.openRecentAsset(validation.data.assetId);
+    } catch (error) {
+      return throwSafeIpcError(error);
+    }
+  };
+
+  const handleGetSubtitleSource = async (
+    event: IpcMainInvokeEvent,
+    request: unknown,
+  ): Promise<string> => {
+    assertTrustedSender(event, windowProvider);
+    const validation = validateSubtitleTrackRequest(request);
+    if (!validation.success) {
+      throw new Error(validation.message);
+    }
+    try {
+      return await mediaAssetService.getSubtitleSource(
+        validation.data.assetId,
+        validation.data.trackId,
+      );
     } catch (error) {
       return throwSafeIpcError(error);
     }
@@ -397,6 +417,7 @@ export function registerIpcHandlers(
   ipcMain.handle(IPC_CHANNELS.mediaCancelFolderImport, handleCancelFolderImport);
   ipcMain.handle(IPC_CHANNELS.mediaGetSource, handleGetMediaSource);
   ipcMain.handle(IPC_CHANNELS.mediaGetMetadata, handleGetMediaMetadata);
+  ipcMain.handle(IPC_CHANNELS.mediaGetSubtitleSource, handleGetSubtitleSource);
   ipcMain.handle(IPC_CHANNELS.preferencesGet, handleGetPreferences);
   ipcMain.handle(IPC_CHANNELS.preferencesSave, handleSavePreferences);
   ipcMain.handle(IPC_CHANNELS.resumeGet, handleGetResumePosition);
@@ -422,6 +443,7 @@ export function registerIpcHandlers(
     ipcMain.removeHandler(IPC_CHANNELS.mediaCancelFolderImport);
     ipcMain.removeHandler(IPC_CHANNELS.mediaGetSource);
     ipcMain.removeHandler(IPC_CHANNELS.mediaGetMetadata);
+    ipcMain.removeHandler(IPC_CHANNELS.mediaGetSubtitleSource);
     ipcMain.removeHandler(IPC_CHANNELS.preferencesGet);
     ipcMain.removeHandler(IPC_CHANNELS.preferencesSave);
     ipcMain.removeHandler(IPC_CHANNELS.resumeGet);
