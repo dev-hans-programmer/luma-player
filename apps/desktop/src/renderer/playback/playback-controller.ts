@@ -196,7 +196,25 @@ export class PlaybackController {
       return;
     }
 
-    await element.requestFullscreen();
+    await (element.parentElement ?? element).requestFullscreen();
+  }
+
+  public async requestPictureInPicture(): Promise<void> {
+    const element = this.requireElement() as HTMLVideoElement & {
+      requestPictureInPicture?: () => Promise<unknown>;
+    };
+    const requestPictureInPicture = element.requestPictureInPicture;
+
+    if (!requestPictureInPicture) {
+      return;
+    }
+
+    if (document.pictureInPictureElement) {
+      await document.exitPictureInPicture();
+      return;
+    }
+
+    await requestPictureInPicture.call(element);
   }
 
   private readonly handleLoadedMetadata = (): void => {

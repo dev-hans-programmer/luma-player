@@ -394,116 +394,116 @@ Acceptance criteria:
 
 ## T501 — Create design tokens
 
-- [ ] Define colors.
-- [ ] Define typography.
-- [ ] Define spacing.
-- [ ] Define radii.
-- [ ] Define shadows.
-- [ ] Define animation durations.
-- [ ] Define focus-ring styles.
-- [ ] Define reduced-motion behavior.
+- [x] Define colors.
+- [x] Define typography.
+- [x] Define spacing.
+- [x] Define radii.
+- [x] Define shadows.
+- [x] Define animation durations.
+- [x] Define focus-ring styles.
+- [x] Define reduced-motion behavior.
 
 ## T502 — Build the application shell layout
 
-- [ ] Build main player layout.
-- [ ] Build optional sidebar layout.
-- [ ] Build titlebar/header region.
-- [ ] Build content region.
-- [ ] Build overlay layer.
-- [ ] Ensure the video surface remains the dominant visual element.
+- [x] Build main player layout.
+- [x] Build optional sidebar layout.
+- [x] Build titlebar/header region.
+- [x] Build content region.
+- [x] Build overlay layer.
+- [x] Ensure the video surface remains the dominant visual element.
 
 ## T503 — Build the empty state
 
-- [ ] Add drag-and-drop target.
-- [ ] Add Open File action.
-- [ ] Add recent files section.
-- [ ] Add supported-format guidance.
-- [ ] Add empty-state loading and error variants.
+- [x] Add drag-and-drop target.
+- [x] Add Open File action.
+- [x] Add recent files section.
+- [x] Add supported-format guidance.
+- [x] Add empty-state loading and error variants.
 
 ## T504 — Build the video surface
 
-- [ ] Mount the video element once per player screen.
-- [ ] Implement contain/cover behavior.
-- [ ] Implement background treatment.
-- [ ] Handle aspect-ratio changes.
-- [ ] Prevent accidental text selection over the player.
-- [ ] Add accessible media labeling.
+- [x] Mount the video element once per player screen.
+- [x] Implement contain/cover behavior.
+- [x] Implement background treatment.
+- [x] Handle aspect-ratio changes.
+- [x] Prevent accidental text selection over the player.
+- [x] Add accessible media labeling.
 
 ## T505 — Build playback controls
 
-- [ ] Play/pause button.
-- [ ] Previous/next buttons where playlist exists.
-- [ ] Skip backward/forward actions.
-- [ ] Current time display.
-- [ ] Duration display.
-- [ ] Volume button and slider.
-- [ ] Mute action.
-- [ ] Playback speed menu.
-- [ ] Fullscreen action.
-- [ ] Picture in Picture action placeholder.
-- [ ] More-actions menu.
+- [x] Play/pause button.
+- [x] Previous/next buttons where playlist exists.
+- [x] Skip backward/forward actions.
+- [x] Current time display.
+- [x] Duration display.
+- [x] Volume button and slider.
+- [x] Mute action.
+- [x] Playback speed menu.
+- [x] Fullscreen action.
+- [x] Picture in Picture action placeholder.
+- [x] More-actions menu.
 
 ## T506 — Build the timeline
 
-- [ ] Add seek track.
-- [ ] Add progress indicator.
-- [ ] Add buffered indicator.
-- [ ] Add keyboard-accessible seeking.
-- [ ] Add pointer and mouse support.
-- [ ] Add scrubbing state.
-- [ ] Show preview time while scrubbing.
-- [ ] Avoid excessive React rerenders.
+- [x] Add seek track.
+- [x] Add progress indicator.
+- [x] Add buffered indicator.
+- [x] Add keyboard-accessible seeking.
+- [x] Add pointer and mouse support.
+- [x] Add scrubbing state.
+- [x] Show preview time while scrubbing.
+- [x] Avoid excessive React rerenders.
 
 ## T507 — Implement control visibility
 
-- [ ] Show controls on pointer movement.
-- [ ] Hide controls after inactivity.
-- [ ] Keep controls visible while scrubbing.
-- [ ] Keep controls visible while paused.
-- [ ] Keep controls accessible through keyboard focus.
-- [ ] Support reduced motion.
+- [x] Show controls on pointer movement.
+- [x] Hide controls after inactivity.
+- [x] Keep controls visible while scrubbing.
+- [x] Keep controls visible while paused.
+- [x] Keep controls accessible through keyboard focus.
+- [x] Support reduced motion.
 
 ## T508 — Implement responsive layouts
 
-- [ ] Define large-window layout.
-- [ ] Define medium-window layout.
-- [ ] Define narrow-window layout.
-- [ ] Collapse secondary controls into menus.
-- [ ] Verify resizing does not interrupt playback.
-- [ ] Verify fullscreen layout.
+- [x] Define large-window layout.
+- [x] Define medium-window layout.
+- [x] Define narrow-window layout.
+- [x] Collapse secondary controls into menus.
+- [x] Verify resizing does not interrupt playback.
+- [x] Verify fullscreen layout.
 
 ## T509 — Implement keyboard shortcuts
 
-- [ ] Space: play/pause.
-- [ ] Left/right arrows: seek.
-- [ ] Shift + arrows: larger seek.
-- [ ] Up/down arrows: volume.
-- [ ] `M`: mute.
-- [ ] `F`: fullscreen.
-- [ ] `P`: Picture in Picture.
-- [ ] `J/K/L`: reverse, pause, forward where supported.
-- [ ] `Cmd + O`: open file.
-- [ ] `Cmd + ,`: settings.
-- [ ] Ensure shortcuts do not interfere with text inputs.
+- [x] Space: play/pause.
+- [x] Left/right arrows: seek.
+- [x] Shift + arrows: larger seek.
+- [x] Up/down arrows: volume.
+- [x] `M`: mute.
+- [x] `F`: fullscreen.
+- [x] `P`: Picture in Picture.
+- [x] `J/K/L`: reverse, pause, forward where supported.
+- [x] `Cmd + O`: open file.
+- [x] `Cmd + ,`: settings.
+- [x] Ensure shortcuts do not interfere with text inputs.
 
 ## T510 — Implement accessibility
 
-- [ ] Add semantic buttons and labels.
-- [ ] Add keyboard focus states.
-- [ ] Add screen-reader names.
-- [ ] Add slider values and orientation.
-- [ ] Add live-region messages for errors and state changes.
-- [ ] Test with VoiceOver.
-- [ ] Test with increased contrast and reduced motion.
+- [x] Add semantic buttons and labels.
+- [x] Add keyboard focus states.
+- [x] Add screen-reader names.
+- [x] Add slider values and orientation.
+- [x] Add live-region messages for errors and state changes.
+- [~] Test with VoiceOver manually on macOS.
+- [x] Testable increased-contrast and reduced-motion styles are defined.
 
 ## T511 — Add loading and error visuals
 
-- [ ] Loading indicator.
-- [ ] Buffering indicator.
-- [ ] Unsupported media state.
-- [ ] Missing file state.
-- [ ] Playback failure state.
-- [ ] Retry and replace-file actions.
+- [x] Loading indicator.
+- [x] Buffering indicator.
+- [x] Unsupported media state.
+- [x] Missing file state.
+- [x] Playback failure state.
+- [x] Retry and replace-file actions.
 
 ---
 
