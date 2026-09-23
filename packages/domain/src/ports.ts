@@ -45,6 +45,7 @@ export type PlaybackEvent =
   | { readonly type: 'waiting'; readonly state: PlaybackState }
   | { readonly type: 'stalled'; readonly state: PlaybackState }
   | { readonly type: 'playing'; readonly state: PlaybackState }
+  | { readonly type: 'paused'; readonly state: PlaybackState }
   | { readonly type: 'timeupdate'; readonly state: PlaybackState }
   | { readonly type: 'progress'; readonly state: PlaybackState }
   | { readonly type: 'ended'; readonly state: PlaybackState }

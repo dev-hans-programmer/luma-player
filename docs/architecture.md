@@ -86,12 +86,17 @@ renderer cannot smuggle unexpected data into a privileged handler.
 
 ## Media loading flow
 
-The renderer will request an asset through a future application use case. The
-main process validates the selected file, stores an opaque `MediaAssetId`, and
-serves the validated file through the controlled `media://` protocol. The
+The renderer requests an asset through the typed preload API. The main process
+normalizes and validates the selected file, stores an opaque `MediaAssetId`,
+and serves the validated file through the controlled `media://` protocol. The
 renderer receives the opaque identifier and never receives a filesystem path.
-Metadata loading and persistence use domain repository ports, keeping them off
-the playback-critical path.
+The protocol supports HTTP-style byte ranges and creates a filesystem stream
+for each request, so large files are not buffered into renderer memory.
+
+Metadata probing runs independently of source attachment. When `ffprobe` is
+available, duration, dimensions, audio/subtitle tracks, and chapters are
+returned. If it is unavailable, playback can still start and the browser
+provides basic duration and dimension events through `PlaybackController`.
 
 ## Renderer state boundaries
 

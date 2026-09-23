@@ -15,6 +15,10 @@ The player will support formats that are reliably playable by the target Electro
 - M4V
 - WebM where supported by the target runtime
 
+The Phase 4 file picker accepts MP4, MOV, M4V, WebM, MKV, AVI, and WMV video
+extensions plus common local audio formats. The browser/Electron codec support
+still determines whether a particular file can play.
+
 ### Primary codec targets
 
 - H.264 video
@@ -51,6 +55,10 @@ The application should show a useful unsupported-media message and never silentl
 - Preserve the original file; the player never modifies user media.
 - Handle missing, moved, unreadable, corrupted, and unsupported files distinctly where possible.
 - Log diagnostic details without displaying sensitive filesystem information unnecessarily.
+
+Metadata probing uses an optional `ffprobe` executable. Set
+`LUMA_FFPROBE_PATH` when it is not available on `PATH`; playback does not
+depend on the probe being installed.
 
 ## Test matrix
 

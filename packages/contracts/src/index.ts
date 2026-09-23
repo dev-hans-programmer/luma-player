@@ -1,5 +1,9 @@
 export const IPC_CHANNELS = {
   appGetInfo: 'app:get-info',
+  mediaOpenFile: 'media:open-file',
+  mediaRegisterDroppedFiles: 'media:register-dropped-files',
+  mediaGetSource: 'media:get-source',
+  mediaGetMetadata: 'media:get-metadata',
   menuCommand: 'menu:command',
   rendererError: 'renderer:error',
   windowClose: 'window:close',
@@ -25,6 +29,46 @@ export interface AppInfo {
   readonly version: string;
 }
 
+export interface MediaAssetPayload {
+  readonly id: string;
+  readonly displayName: string;
+  readonly mimeType: string | null;
+  readonly sizeBytes: number | null;
+  readonly addedAtIso: string;
+  readonly metadata: MediaMetadataPayload | null;
+}
+
+export interface MediaMetadataPayload {
+  readonly durationMs: number | null;
+  readonly width: number | null;
+  readonly height: number | null;
+  readonly hasAudio: boolean;
+  readonly audioTracks: readonly AudioTrackPayload[];
+  readonly subtitleTracks: readonly SubtitleTrackPayload[];
+  readonly chapters: readonly ChapterPayload[];
+}
+
+export interface AudioTrackPayload {
+  readonly id: string;
+  readonly label: string;
+  readonly language: string | null;
+  readonly channels: number | null;
+}
+
+export interface SubtitleTrackPayload {
+  readonly id: string;
+  readonly label: string;
+  readonly language: string | null;
+  readonly kind: 'embedded' | 'external';
+}
+
+export interface ChapterPayload {
+  readonly id: string;
+  readonly title: string;
+  readonly startMs: number;
+  readonly endMs: number;
+}
+
 export interface RendererErrorPayload {
   readonly message: string;
   readonly stack?: string | undefined;
@@ -33,6 +77,10 @@ export interface RendererErrorPayload {
 
 export interface IpcRequestMap {
   readonly 'app:get-info': undefined;
+  readonly 'media:open-file': undefined;
+  readonly 'media:register-dropped-files': { readonly filePaths: readonly string[] };
+  readonly 'media:get-source': { readonly assetId: string };
+  readonly 'media:get-metadata': { readonly assetId: string };
   readonly 'menu:command': undefined;
   readonly 'renderer:error': RendererErrorPayload;
   readonly 'window:close': undefined;
@@ -43,6 +91,10 @@ export interface IpcRequestMap {
 
 export interface IpcResponseMap {
   readonly 'app:get-info': AppInfo;
+  readonly 'media:open-file': readonly MediaAssetPayload[];
+  readonly 'media:register-dropped-files': readonly MediaAssetPayload[];
+  readonly 'media:get-source': string;
+  readonly 'media:get-metadata': MediaMetadataPayload;
   readonly 'window:close': void;
   readonly 'window:minimize': void;
   readonly 'window:toggle-fullscreen': boolean;
@@ -71,6 +123,12 @@ export interface ElectronAPI {
   readonly platform: string;
   readonly electronVersion: string;
   readonly getAppInfo: () => Promise<AppInfo>;
+  readonly openFile: () => Promise<readonly MediaAssetPayload[]>;
+  readonly registerDroppedFiles: (
+    filePaths: readonly string[],
+  ) => Promise<readonly MediaAssetPayload[]>;
+  readonly getMediaSource: (assetId: string) => Promise<string>;
+  readonly getMediaMetadata: (assetId: string) => Promise<MediaMetadataPayload>;
   readonly reportError: (payload: RendererErrorPayload) => void;
   readonly onMenuCommand: (listener: (command: AppCommandId) => void) => () => void;
   readonly window: {
@@ -137,6 +195,32 @@ export function assertEmptyIpcRequest(value: unknown): void {
   if (value !== undefined) {
     throw new Error('This IPC channel does not accept a request payload.');
   }
+}
+
+export function validateDroppedFilesRequest(
+  value: unknown,
+): ValidationResult<{ readonly filePaths: readonly string[] }> {
+  if (!isRecord(value) || !Array.isArray(value.filePaths) || value.filePaths.length === 0) {
+    return { success: false, message: 'At least one dropped file path is required.' };
+  }
+
+  if (
+    value.filePaths.some((filePath) => typeof filePath !== 'string' || filePath.trim().length === 0)
+  ) {
+    return { success: false, message: 'Dropped file paths must be non-empty strings.' };
+  }
+
+  return { success: true, data: { filePaths: value.filePaths } };
+}
+
+export function validateAssetIdRequest(
+  value: unknown,
+): ValidationResult<{ readonly assetId: string }> {
+  if (!isRecord(value) || typeof value.assetId !== 'string' || value.assetId.trim().length === 0) {
+    return { success: false, message: 'A non-empty media asset id is required.' };
+  }
+
+  return { success: true, data: { assetId: value.assetId } };
 }
 
 export function serializeIpcError(error: unknown): SerializedIpcError {

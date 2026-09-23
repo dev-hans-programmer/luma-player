@@ -9,7 +9,7 @@ export default defineConfig({
   main: {
     build: {
       externalizeDeps: {
-        exclude: ['@luma/contracts'],
+        exclude: ['@luma/contracts', '@luma/domain'],
       },
       lib: {
         entry: path.join(currentDirectory, 'src/main/main.ts'),

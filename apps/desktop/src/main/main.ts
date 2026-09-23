@@ -1,9 +1,23 @@
-import { app } from 'electron';
+import { app, protocol } from 'electron';
 import { registerIpcHandlers } from './ipc/register-ipc';
 import { createApplicationMenu } from './menu/application-menu';
 import { registerWindowSecurity } from './security/security-policy';
 import { logger, registerProcessErrorHandlers } from './services/logger';
+import { MediaAssetService } from './services/media-asset-service';
+import { registerMediaProtocol } from './services/media-protocol';
 import { createMainWindow, getMainWindow } from './windows/main-window';
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'media',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      stream: true,
+    },
+  },
+]);
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
@@ -13,7 +27,9 @@ if (!hasSingleInstanceLock) {
   const unregisterProcessErrorHandlers = registerProcessErrorHandlers();
   let unregisterIpcHandlers: (() => void) | undefined;
   let unregisterWindowSecurity: (() => void) | undefined;
+  let unregisterMediaProtocol: (() => void) | undefined;
   let isInitialized = false;
+  const mediaAssetService = new MediaAssetService();
 
   const handleTerminationSignal = (signal: NodeJS.Signals): void => {
     logger.info('Received development termination signal', { signal });
@@ -43,7 +59,8 @@ if (!hasSingleInstanceLock) {
     }
 
     isInitialized = true;
-    unregisterIpcHandlers = registerIpcHandlers(getMainWindow);
+    unregisterMediaProtocol = registerMediaProtocol(mediaAssetService);
+    unregisterIpcHandlers = registerIpcHandlers(getMainWindow, mediaAssetService);
     await createMainWindow((createdWindow) => {
       unregisterWindowSecurity = registerWindowSecurity(createdWindow);
     });
@@ -63,6 +80,7 @@ if (!hasSingleInstanceLock) {
   app.on('before-quit', () => {
     unregisterIpcHandlers?.();
     unregisterWindowSecurity?.();
+    unregisterMediaProtocol?.();
     unregisterProcessErrorHandlers();
   });
 

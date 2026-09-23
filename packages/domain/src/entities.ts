@@ -11,6 +11,7 @@ export interface MediaMetadata {
   readonly hasAudio: boolean;
   readonly audioTracks: readonly AudioTrack[];
   readonly subtitleTracks: readonly SubtitleTrack[];
+  readonly chapters: readonly Chapter[];
 }
 
 /**
@@ -60,6 +61,13 @@ export interface SubtitleTrack {
   readonly kind: 'embedded' | 'external';
 }
 
+export interface Chapter {
+  readonly id: string;
+  readonly title: string;
+  readonly startMs: number;
+  readonly endMs: number;
+}
+
 export type PlaybackStatus =
   'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'waiting' | 'ended' | 'error';
 
@@ -68,6 +76,7 @@ export interface PlaybackState {
   readonly assetId: MediaAssetId | null;
   readonly currentTimeMs: number;
   readonly durationMs: number | null;
+  readonly bufferedTimeMs: number;
   readonly volume: number;
   readonly isMuted: boolean;
   readonly playbackRate: number;

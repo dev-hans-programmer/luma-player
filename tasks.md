@@ -296,37 +296,37 @@ Acceptance criteria:
 
 ## T401 — Implement file selection
 
-- [ ] Implement native Open File dialog.
-- [ ] Restrict selectable file types where appropriate.
-- [ ] Return opaque media identifiers rather than raw paths to the renderer.
-- [ ] Handle cancellation cleanly.
-- [ ] Handle inaccessible files.
+- [x] Implement native Open File dialog.
+- [x] Restrict selectable file types where appropriate.
+- [x] Return opaque media identifiers rather than raw paths to the renderer.
+- [x] Handle cancellation cleanly.
+- [x] Handle inaccessible files.
 
 ## T402 — Implement drag and drop
 
-- [ ] Add drop target to the empty state.
-- [ ] Validate dropped files.
-- [ ] Support multiple files if playlists are supported.
-- [ ] Reject directories unless folder import is implemented.
-- [ ] Show clear drag-over feedback.
+- [x] Add drop target to the empty state.
+- [x] Validate dropped files.
+- [x] Support multiple files if playlists are supported.
+- [x] Reject directories unless folder import is implemented.
+- [x] Show clear drag-over feedback.
 
 ## T403 — Implement secure file access
 
-- [ ] Normalize and validate selected paths in the main process.
-- [ ] Prevent path traversal.
-- [ ] Handle external drives.
-- [ ] Handle files moved or deleted after selection.
-- [ ] Implement bookmark persistence if required by the sandbox model.
+- [x] Normalize and validate selected paths in the main process.
+- [x] Prevent path traversal.
+- [x] Handle external drives.
+- [x] Handle files moved or deleted after selection.
+- [x] Bookmark persistence is not required until an App Sandbox distribution target is enabled.
 
 ## T404 — Implement the custom media protocol
 
-- [ ] Register a controlled `media://` protocol.
-- [ ] Map opaque asset IDs to validated filesystem locations.
-- [ ] Support byte-range requests.
-- [ ] Return correct MIME types.
-- [ ] Support large files without buffering the complete file.
-- [ ] Close streams on cancellation.
-- [ ] Add protocol security tests.
+- [x] Register a controlled `media://` protocol.
+- [x] Map opaque asset IDs to validated filesystem locations.
+- [x] Support byte-range requests.
+- [x] Return correct MIME types.
+- [x] Support large files without buffering the complete file.
+- [x] Close streams on cancellation.
+- [x] Add protocol security tests.
 
 Acceptance criteria:
 
@@ -335,58 +335,58 @@ Acceptance criteria:
 
 ## T405 — Implement media metadata loading
 
-- [ ] Load duration.
-- [ ] Load natural dimensions.
-- [ ] Detect audio presence.
-- [ ] Detect subtitle tracks where available.
-- [ ] Detect chapters where available.
-- [ ] Return useful metadata errors.
-- [ ] Keep metadata loading off the playback-critical path.
+- [x] Load duration.
+- [x] Load natural dimensions.
+- [x] Detect audio presence.
+- [x] Detect subtitle tracks where available.
+- [x] Detect chapters where available.
+- [x] Return useful metadata errors.
+- [x] Keep metadata loading off the playback-critical path.
 
 ## T406 — Implement `PlaybackController`
 
-- [ ] Create the controller abstraction.
-- [ ] Attach and detach an HTML video element.
-- [ ] Load and replace media sources.
-- [ ] Implement play and pause.
-- [ ] Implement seek.
-- [ ] Implement volume and mute.
-- [ ] Implement playback rate.
-- [ ] Implement looping.
-- [ ] Implement fullscreen requests.
-- [ ] Implement ended behavior.
-- [ ] Implement cleanup when media changes.
+- [x] Create the controller abstraction.
+- [x] Attach and detach an HTML video element.
+- [x] Load and replace media sources.
+- [x] Implement play and pause.
+- [x] Implement seek.
+- [x] Implement volume and mute.
+- [x] Implement playback rate.
+- [x] Implement looping.
+- [x] Implement fullscreen requests.
+- [x] Implement ended behavior.
+- [x] Implement cleanup when media changes.
 
 ## T407 — Implement playback event translation
 
-- [ ] Translate native video events to typed application events.
-- [ ] Handle `loadedmetadata`.
-- [ ] Handle `canplay`.
-- [ ] Handle `waiting` and `stalled`.
-- [ ] Handle `playing`.
-- [ ] Handle `timeupdate`.
-- [ ] Handle `progress`.
-- [ ] Handle `ended`.
-- [ ] Handle `error`.
-- [ ] Throttle high-frequency events before updating React state.
+- [x] Translate native video events to typed application events.
+- [x] Handle `loadedmetadata`.
+- [x] Handle `canplay`.
+- [x] Handle `waiting` and `stalled`.
+- [x] Handle `playing`.
+- [x] Handle `timeupdate`.
+- [x] Handle `progress`.
+- [x] Handle `ended`.
+- [x] Handle `error`.
+- [x] Throttle high-frequency events before updating React state.
 
 ## T408 — Implement playback error handling
 
-- [ ] Distinguish unsupported media from missing files.
-- [ ] Display user-safe messages.
-- [ ] Preserve diagnostic details in logs.
-- [ ] Offer retry.
-- [ ] Offer to choose another file.
-- [ ] Ensure the UI never becomes permanently stuck in loading state.
+- [x] Distinguish unsupported media from missing files.
+- [x] Display user-safe messages.
+- [x] Preserve diagnostic details in logs.
+- [x] Offer retry.
+- [x] Offer to choose another file.
+- [x] Ensure the UI never becomes permanently stuck in loading state.
 
 ## T409 — Add media test fixtures
 
-- [ ] Add small supported video fixture.
-- [ ] Add audio-only fixture if supported.
-- [ ] Add subtitle fixture.
-- [ ] Add malformed or unsupported fixture.
-- [ ] Add long-duration fixture strategy.
-- [ ] Document fixture licensing and provenance.
+- [x] Add small supported video fixture.
+- [x] Add audio-only fixture if supported.
+- [x] Add subtitle fixture.
+- [x] Add malformed or unsupported fixture.
+- [x] Add long-duration fixture strategy.
+- [x] Document fixture licensing and provenance.
 
 ---
 

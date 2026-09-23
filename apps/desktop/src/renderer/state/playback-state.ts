@@ -6,6 +6,7 @@ export const playbackStore = createExternalStore<PlaybackState>({
   assetId: null,
   currentTimeMs: 0,
   durationMs: null,
+  bufferedTimeMs: 0,
   volume: 1,
   isMuted: false,
   playbackRate: 1,

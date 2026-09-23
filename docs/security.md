@@ -32,6 +32,10 @@ The renderer cannot import Node.js or Electron modules directly. Filesystem, win
 
 Structured logs are retained in a bounded in-memory buffer. User home-directory prefixes and local `file://` paths are redacted before logs are written or exported. Diagnostics are exported only after an explicit user action.
 
-## Future media access
+## Media access
 
-The media pipeline will use a controlled custom protocol. Raw filesystem paths will not be passed to React, and media requests will be validated in the main process.
+The media pipeline uses a controlled `media://` protocol. Raw filesystem paths
+are never passed to React. The main process maps an opaque asset identifier to
+a normalized, real filesystem path, validates the file before registration,
+and rejects unknown identifiers. Range requests are streamed from the file and
+never read wholesale into renderer memory.

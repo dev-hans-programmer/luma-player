@@ -1,4 +1,9 @@
-import type { AppCommandId, AppInfo } from '@luma/contracts';
+import type {
+  AppCommandId,
+  AppInfo,
+  MediaAssetPayload,
+  MediaMetadataPayload,
+} from '@luma/contracts';
 import { createExternalStore } from './external-store';
 
 export interface ApplicationState {
@@ -6,6 +11,9 @@ export interface ApplicationState {
   readonly appInfo: AppInfo | null;
   readonly lastCommand: AppCommandId | null;
   readonly errorMessage: string | null;
+  readonly activeAsset: MediaAssetPayload | null;
+  readonly activeMetadata: MediaMetadataPayload | null;
+  readonly mediaErrorMessage: string | null;
 }
 
 export const applicationStore = createExternalStore<ApplicationState>({
@@ -13,4 +21,7 @@ export const applicationStore = createExternalStore<ApplicationState>({
   appInfo: null,
   lastCommand: null,
   errorMessage: null,
+  activeAsset: null,
+  activeMetadata: null,
+  mediaErrorMessage: null,
 });

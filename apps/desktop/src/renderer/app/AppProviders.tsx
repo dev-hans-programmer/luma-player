@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { openMediaFile, setMediaError } from '../media/media-actions';
 import { applicationStore } from '../state/app-state';
 
 interface AppProvidersProps {
@@ -11,6 +12,10 @@ export function AppProviders({ children }: AppProvidersProps): ReactNode {
   useEffect(() => {
     const removeMenuListener = window.electronAPI.onMenuCommand((command) => {
       applicationStore.setState((current) => ({ ...current, lastCommand: command }));
+
+      if (command === 'media.open-file') {
+        void openMediaFile().catch(setMediaError);
+      }
     });
 
     void window.electronAPI

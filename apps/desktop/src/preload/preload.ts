@@ -3,6 +3,8 @@ import {
   IPC_CHANNELS,
   type AppCommandId,
   type ElectronAPI,
+  type MediaAssetPayload,
+  type MediaMetadataPayload,
   type RendererErrorPayload,
 } from '@luma/contracts';
 
@@ -10,6 +12,14 @@ const electronAPI: ElectronAPI = {
   platform: process.platform,
   electronVersion: process.versions.electron,
   getAppInfo: () => ipcRenderer.invoke(IPC_CHANNELS.appGetInfo),
+  openFile: (): Promise<readonly MediaAssetPayload[]> =>
+    ipcRenderer.invoke(IPC_CHANNELS.mediaOpenFile),
+  registerDroppedFiles: (filePaths: readonly string[]): Promise<readonly MediaAssetPayload[]> =>
+    ipcRenderer.invoke(IPC_CHANNELS.mediaRegisterDroppedFiles, { filePaths }),
+  getMediaSource: (assetId: string): Promise<string> =>
+    ipcRenderer.invoke(IPC_CHANNELS.mediaGetSource, { assetId }),
+  getMediaMetadata: (assetId: string): Promise<MediaMetadataPayload> =>
+    ipcRenderer.invoke(IPC_CHANNELS.mediaGetMetadata, { assetId }),
   reportError: (payload: RendererErrorPayload) => {
     ipcRenderer.send(IPC_CHANNELS.rendererError, payload);
   },
