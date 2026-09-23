@@ -91,8 +91,11 @@ export interface RecentFileEntry {
 }
 
 export interface PlayerPreferences {
+  readonly theme: 'system' | 'light' | 'dark';
   readonly rememberPlaybackPosition: boolean;
   readonly autoplay: boolean;
   readonly preferredVolume: number;
   readonly preferredPlaybackRate: number;
+  readonly showSidebar: boolean;
+  readonly autoHideControls: boolean;
 }

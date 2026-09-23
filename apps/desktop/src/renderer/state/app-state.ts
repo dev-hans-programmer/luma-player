@@ -3,6 +3,7 @@ import type {
   AppInfo,
   MediaAssetPayload,
   MediaMetadataPayload,
+  RecentFilePayload,
 } from '@luma/contracts';
 import { createExternalStore } from './external-store';
 
@@ -14,6 +15,7 @@ export interface ApplicationState {
   readonly activeAsset: MediaAssetPayload | null;
   readonly activeMetadata: MediaMetadataPayload | null;
   readonly mediaErrorMessage: string | null;
+  readonly recentFiles: readonly RecentFilePayload[];
 }
 
 export const applicationStore = createExternalStore<ApplicationState>({
@@ -24,4 +26,5 @@ export const applicationStore = createExternalStore<ApplicationState>({
   activeAsset: null,
   activeMetadata: null,
   mediaErrorMessage: null,
+  recentFiles: [],
 });

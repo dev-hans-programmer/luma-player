@@ -25,11 +25,12 @@ Video editing, transcoding, cloud synchronization, media-server browsing, networ
 
 ## Project status
 
-Phase 5 is implemented. The secure Electron application shell, typed preload
+Phase 6 is implemented. The secure Electron application shell, typed preload
 bridge, domain entities and ports, runtime-validated IPC contracts, isolated
 renderer stores, secure local-file registration, range-capable `media://`
 streaming, optional metadata probing, playback controller, responsive player
-interface, keyboard controls, timeline, and accessibility states are in place.
+interface, keyboard controls, timeline, preferences, recent files, resume
+playback, playlists, and cancellable folder import are in place.
 Manual VoiceOver verification remains a release validation step. Electron
 Forge packaging remains intentionally deferred to Phase 11.
 

@@ -1,7 +1,28 @@
 import { useState } from 'react';
-import { openMediaFile, registerDroppedMediaFiles, setMediaError } from '../media/media-actions';
+import {
+  importMediaFolder,
+  openMediaFile,
+  openRecentMedia,
+  registerDroppedMediaFiles,
+  setMediaError,
+} from '../media/media-actions';
 import { VideoPlayer } from '../playback/VideoPlayer';
-import { useApplicationState, useUiState } from '../state/hooks';
+import {
+  addAssetToPlaylist,
+  createPlaylist,
+  getAdjacentPlaylistItem,
+  removePlaylistItem,
+  reorderPlaylistItem,
+  setPlaylistActiveItem,
+} from '../playlists/playlist-actions';
+import { applicationStore } from '../state/app-state';
+import {
+  useApplicationState,
+  usePlaylistState,
+  useSettingsState,
+  useUiState,
+} from '../state/hooks';
+import { updatePreferences } from '../settings/settings-actions';
 import { uiStore } from '../state/ui-state';
 
 interface DroppedFile extends File {
@@ -9,9 +30,19 @@ interface DroppedFile extends File {
 }
 
 export function App(): React.JSX.Element {
-  const { activeAsset, activeMetadata, appInfo, errorMessage, mediaErrorMessage, status } =
-    useApplicationState();
-  const { isSettingsOpen, isSidebarOpen } = useUiState();
+  const {
+    activeAsset,
+    activeMetadata,
+    appInfo,
+    errorMessage,
+    mediaErrorMessage,
+    recentFiles,
+    status,
+  } = useApplicationState();
+  const { importProgress, isImportingFolder, isSettingsOpen, isSidebarOpen } = useUiState();
+  const settings = useSettingsState();
+  const { activePlaylistId, playlists } = usePlaylistState();
+  const activePlaylist = playlists.find((playlist) => playlist.id === activePlaylistId);
   const [isDragActive, setIsDragActive] = useState(false);
 
   const handleDrop = (event: React.DragEvent<HTMLElement>): void => {
@@ -40,6 +71,41 @@ export function App(): React.JSX.Element {
 
   const handleToggleSidebar = (): void => {
     uiStore.setState((current) => ({ ...current, isSidebarOpen: !current.isSidebarOpen }));
+  };
+
+  const handleImportFolder = (): void => {
+    void importMediaFolder().catch(setMediaError);
+  };
+
+  const handleClearRecentFiles = (): void => {
+    void window.electronAPI
+      .clearRecentFiles()
+      .then(() => applicationStore.setState((current) => ({ ...current, recentFiles: [] })))
+      .catch(setMediaError);
+  };
+
+  const openPlaylistItem = (
+    item: NonNullable<ReturnType<typeof getAdjacentPlaylistItem>>,
+  ): void => {
+    void openRecentMedia(item.assetId)
+      .then(() => {
+        if (activePlaylist) {
+          void setPlaylistActiveItem(activePlaylist.id, item.id);
+        }
+      })
+      .catch(setMediaError);
+  };
+
+  const previousItem = activeAsset
+    ? getAdjacentPlaylistItem(activePlaylist, activeAsset.id, -1)
+    : null;
+  const nextItem = activeAsset ? getAdjacentPlaylistItem(activePlaylist, activeAsset.id, 1) : null;
+
+  const handleCreatePlaylist = (): void => {
+    const name = window.prompt('Playlist name', 'New playlist');
+    if (name !== null) {
+      void createPlaylist(name).catch(setMediaError);
+    }
   };
 
   return (
@@ -95,7 +161,12 @@ export function App(): React.JSX.Element {
             ) : null}
           </div>
           {activeAsset ? (
-            <VideoPlayer asset={activeAsset} onChooseAnother={handleOpenFile} />
+            <VideoPlayer
+              asset={activeAsset}
+              onChooseAnother={handleOpenFile}
+              onPrevious={previousItem ? () => openPlaylistItem(previousItem) : undefined}
+              onNext={nextItem ? () => openPlaylistItem(nextItem) : undefined}
+            />
           ) : (
             <div className="drop-target">
               <span className="drop-icon" aria-hidden="true">
@@ -153,6 +224,128 @@ export function App(): React.JSX.Element {
                 <small>History and playlists arrive in the next phase.</small>
               </div>
             )}
+            <div className="recent-files-section">
+              <div className="recent-files-heading">
+                <span>Recent files</span>
+                <button type="button" onClick={handleImportFolder} disabled={isImportingFolder}>
+                  {isImportingFolder ? 'Importing…' : 'Import folder'}
+                </button>
+                {recentFiles.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={handleClearRecentFiles}
+                    disabled={isImportingFolder}
+                  >
+                    Clear
+                  </button>
+                ) : null}
+              </div>
+              {recentFiles.length > 0 ? (
+                <div className="recent-file-list">
+                  {recentFiles.slice(0, 5).map((recentFile) => (
+                    <button
+                      key={recentFile.asset.id}
+                      type="button"
+                      className="recent-file-button"
+                      onClick={() => void openRecentMedia(recentFile.asset.id).catch(setMediaError)}
+                    >
+                      <span aria-hidden="true">◌</span>
+                      <span>{recentFile.asset.displayName}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <small className="recent-empty">No recent files yet.</small>
+              )}
+              {isImportingFolder && importProgress ? (
+                <small className="import-progress" aria-live="polite">
+                  Scanned {importProgress.scanned} · imported {importProgress.imported}
+                </small>
+              ) : null}
+              {isImportingFolder ? (
+                <button type="button" onClick={() => void window.electronAPI.cancelFolderImport()}>
+                  Cancel import
+                </button>
+              ) : null}
+            </div>
+            <div className="recent-files-section playlist-section">
+              <div className="recent-files-heading">
+                <span>Playlists</span>
+                <button type="button" onClick={handleCreatePlaylist}>
+                  New
+                </button>
+              </div>
+              {playlists.length > 0 ? (
+                playlists.map((playlist) => (
+                  <div className="playlist-card" key={playlist.id}>
+                    <div className="playlist-card-heading">
+                      <strong>{playlist.name}</strong>
+                      {activeAsset ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void addAssetToPlaylist(playlist.id, activeAsset).catch(setMediaError)
+                          }
+                        >
+                          + current
+                        </button>
+                      ) : null}
+                    </div>
+                    {playlist.items.length > 0 ? (
+                      playlist.items.map((item) => (
+                        <div className="playlist-item-row" key={item.id}>
+                          <button
+                            type="button"
+                            className="playlist-item-button"
+                            onClick={() => openPlaylistItem(item)}
+                            disabled={
+                              !recentFiles.some(
+                                (recentFile) => recentFile.asset.id === item.assetId,
+                              )
+                            }
+                          >
+                            {item.title}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void reorderPlaylistItem(playlist.id, item.id, -1).catch(
+                                setMediaError,
+                              )
+                            }
+                            aria-label={`Move ${item.title} up`}
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void reorderPlaylistItem(playlist.id, item.id, 1).catch(setMediaError)
+                            }
+                            aria-label={`Move ${item.title} down`}
+                          >
+                            ↓
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void removePlaylistItem(playlist.id, item.id).catch(setMediaError)
+                            }
+                            aria-label={`Remove ${item.title}`}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <small className="recent-empty">Add the current file to begin.</small>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <small className="recent-empty">Create a playlist for a queue.</small>
+              )}
+            </div>
             <div className="sidebar-footer">
               <span>{appInfo?.version ? `Luma ${appInfo.version}` : 'Luma Player'}</span>
               <button type="button" onClick={() => window.electronAPI.window.toggleFullscreen()}>
@@ -186,7 +379,49 @@ export function App(): React.JSX.Element {
                 ×
               </button>
             </div>
-            <p>Playback preferences and appearance controls will be connected in Phase 6.</p>
+            <div className="settings-form">
+              <label>
+                Appearance
+                <select
+                  value={settings.theme}
+                  onChange={(event) =>
+                    updatePreferences({ theme: event.target.value as typeof settings.theme })
+                  }
+                >
+                  <option value="system">System</option>
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                </select>
+              </label>
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={settings.rememberPlaybackPosition}
+                  onChange={(event) =>
+                    updatePreferences({ rememberPlaybackPosition: event.target.checked })
+                  }
+                />
+                Remember playback position
+              </label>
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={settings.autoplay}
+                  onChange={(event) => updatePreferences({ autoplay: event.target.checked })}
+                />
+                Autoplay when media is ready
+              </label>
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={settings.autoHideControls}
+                  onChange={(event) =>
+                    updatePreferences({ autoHideControls: event.target.checked })
+                  }
+                />
+                Hide controls while playing
+              </label>
+            </div>
           </section>
         </div>
       ) : null}

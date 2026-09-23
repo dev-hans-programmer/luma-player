@@ -5,6 +5,7 @@ import path from 'node:path';
 import { dialog, type BrowserWindow } from 'electron';
 import type { MediaAsset, MediaMetadata } from '@luma/domain';
 import { FileAccessError, MediaError } from '@luma/domain';
+import type { RecentFilesService } from './persistence/recent-files-service';
 
 const SUPPORTED_EXTENSIONS = [
   'aac',
@@ -210,6 +211,13 @@ function runFfprobe(filePath: string): Promise<FfprobeResult | null> {
 export class MediaAssetService {
   private readonly assetPaths = new Map<string, string>();
   private readonly assets = new Map<string, MediaAsset>();
+  private readonly recentFiles: RecentFilesService;
+  private recentHydration: Promise<void> | null = null;
+  private activeFolderImport: AbortController | null = null;
+
+  public constructor(recentFiles: RecentFilesService) {
+    this.recentFiles = recentFiles;
+  }
 
   public async openFileDialog(window: BrowserWindow | null): Promise<readonly MediaAsset[]> {
     if (!window || window.isDestroyed()) {
@@ -233,7 +241,132 @@ export class MediaAssetService {
   }
 
   public async registerFiles(filePaths: readonly string[]): Promise<readonly MediaAsset[]> {
-    return Promise.all(filePaths.map((filePath) => this.registerFile(filePath)));
+    return Promise.all(filePaths.map((filePath) => this.registerFile(filePath, undefined, true)));
+  }
+
+  public async getRecentAssets(): Promise<
+    readonly { readonly asset: MediaAsset; readonly lastOpenedAtIso: string }[]
+  > {
+    await this.hydrateRecentAssets();
+    const entries = await this.recentFiles.listPersisted();
+    const recentAssets: { asset: MediaAsset; lastOpenedAtIso: string }[] = [];
+
+    for (const entry of entries) {
+      try {
+        const asset = await this.registerFile(entry.filePath, entry.assetId, false);
+        recentAssets.push({ asset, lastOpenedAtIso: entry.lastOpenedAtIso });
+      } catch {
+        await this.recentFiles.remove(entry.assetId);
+      }
+    }
+
+    return recentAssets;
+  }
+
+  public async openRecentAsset(assetId: string): Promise<MediaAsset> {
+    await this.hydrateRecentAssets();
+    const entry = await this.recentFiles.get(assetId);
+
+    if (!entry) {
+      throw new FileAccessError(
+        'file.not-found',
+        `Recent media asset ${assetId} was not found.`,
+        'This recent file is no longer available.',
+      );
+    }
+
+    return this.registerFile(entry.filePath, entry.assetId, true);
+  }
+
+  public async importFolder(
+    window: BrowserWindow | null,
+    onProgress: (progress: {
+      readonly scanned: number;
+      readonly imported: number;
+      readonly skipped: number;
+      readonly complete: boolean;
+    }) => void,
+  ): Promise<readonly MediaAsset[]> {
+    if (!window || window.isDestroyed()) {
+      return [];
+    }
+
+    if (this.activeFolderImport) {
+      throw new Error('A folder import is already running.');
+    }
+
+    const result = await dialog.showOpenDialog(window, {
+      title: 'Import Media Folder',
+      properties: ['openDirectory'],
+    });
+
+    if (result.canceled || !result.filePaths[0]) {
+      return [];
+    }
+
+    const controller = new AbortController();
+    this.activeFolderImport = controller;
+    const assets: MediaAsset[] = [];
+    let scanned = 0;
+    let skipped = 0;
+
+    const report = (): void => {
+      onProgress({ scanned, imported: assets.length, skipped, complete: false });
+    };
+
+    const scanDirectory = async (directoryPath: string): Promise<void> => {
+      if (controller.signal.aborted) {
+        return;
+      }
+
+      let directory;
+      try {
+        directory = await fs.opendir(directoryPath);
+      } catch {
+        skipped += 1;
+        return;
+      }
+
+      try {
+        for await (const entry of directory) {
+          if (controller.signal.aborted) {
+            return;
+          }
+
+          const entryPath = path.join(directoryPath, entry.name);
+          if (entry.isDirectory()) {
+            await scanDirectory(entryPath);
+          } else if (entry.isFile()) {
+            scanned += 1;
+            if (isSupportedExtension(getExtension(entryPath))) {
+              try {
+                assets.push(await this.registerFile(entryPath, undefined, true));
+              } catch {
+                skipped += 1;
+              }
+            } else {
+              skipped += 1;
+            }
+            report();
+            await new Promise<void>((resolve) => setImmediate(resolve));
+          }
+        }
+      } finally {
+        await directory.close().catch(() => undefined);
+      }
+    };
+
+    try {
+      await scanDirectory(result.filePaths[0]);
+      onProgress({ scanned, imported: assets.length, skipped, complete: true });
+      return assets;
+    } finally {
+      this.activeFolderImport = null;
+    }
+  }
+
+  public cancelFolderImport(): void {
+    this.activeFolderImport?.abort();
   }
 
   public getAssetPath(assetId: string): string | null {
@@ -287,7 +420,11 @@ export class MediaAssetService {
     }
   }
 
-  private async registerFile(filePath: string): Promise<MediaAsset> {
+  private async registerFile(
+    filePath: string,
+    preferredAssetId: string | undefined,
+    persistRecent: boolean,
+  ): Promise<MediaAsset> {
     if (typeof filePath !== 'string' || filePath.trim().length === 0) {
       throw new FileAccessError(
         'file.invalid',
@@ -335,11 +472,14 @@ export class MediaAssetService {
     });
 
     if (existingAsset) {
+      if (persistRecent) {
+        await this.recentFiles.addAsset(existingAsset[1], resolvedPath);
+      }
       return existingAsset[1];
     }
 
     const asset: MediaAsset = {
-      id: randomUUID(),
+      id: preferredAssetId ?? randomUUID(),
       displayName: path.basename(resolvedPath),
       mimeType: MIME_TYPES[extension] ?? null,
       sizeBytes: stats.size,
@@ -348,7 +488,27 @@ export class MediaAssetService {
     };
     this.assets.set(asset.id, asset);
     this.assetPaths.set(asset.id, resolvedPath);
+    if (persistRecent) {
+      await this.recentFiles.addAsset(asset, resolvedPath);
+    }
     return asset;
+  }
+
+  private async hydrateRecentAssets(): Promise<void> {
+    if (!this.recentHydration) {
+      this.recentHydration = (async () => {
+        const entries = await this.recentFiles.listPersisted();
+        for (const entry of entries) {
+          try {
+            await this.registerFile(entry.filePath, entry.assetId, false);
+          } catch {
+            await this.recentFiles.remove(entry.assetId);
+          }
+        }
+      })();
+    }
+
+    await this.recentHydration;
   }
 }
 

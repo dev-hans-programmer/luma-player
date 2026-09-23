@@ -511,54 +511,54 @@ Acceptance criteria:
 
 ## T601 — Implement preferences storage
 
-- [ ] Define preferences schema.
-- [ ] Persist volume.
-- [ ] Persist playback rate.
-- [ ] Persist theme.
-- [ ] Persist control preferences.
-- [ ] Version the preferences schema.
-- [ ] Handle migration and corrupted preferences.
+- [x] Define preferences schema.
+- [x] Persist volume.
+- [x] Persist playback rate.
+- [x] Persist theme.
+- [x] Persist control preferences.
+- [x] Version the preferences schema.
+- [x] Handle migration and corrupted preferences.
 
 ## T602 — Implement recent files
 
-- [ ] Store recent media entries.
-- [ ] Limit list size.
-- [ ] Remove missing files.
-- [ ] Add clear-history action.
-- [ ] Add recent-file UI.
+- [x] Store recent media entries.
+- [x] Limit list size.
+- [x] Remove missing files.
+- [x] Add clear-history action.
+- [x] Add recent-file UI.
 
 ## T603 — Implement resume playback
 
-- [ ] Save playback position periodically.
-- [ ] Avoid excessive disk writes.
-- [ ] Save final position on close when possible.
-- [ ] Restore position after reopening.
-- [ ] Skip resume for media near completion.
+- [x] Save playback position periodically.
+- [x] Avoid excessive disk writes.
+- [x] Save final position on close when possible.
+- [x] Restore position after reopening.
+- [x] Skip resume for media near completion.
 
 ## T604 — Implement playlists
 
-- [ ] Define playlist persistence model.
-- [ ] Add and remove playlist items.
-- [ ] Reorder items.
-- [ ] Play next and previous.
-- [ ] Handle missing playlist items.
-- [ ] Persist active item and position.
+- [x] Define playlist persistence model.
+- [x] Add and remove playlist items.
+- [x] Reorder items.
+- [x] Play next and previous.
+- [x] Handle missing playlist items.
+- [x] Persist active item and position.
 
 ## T605 — Implement folder import
 
-- [ ] Add folder selection.
-- [ ] Scan supported media types.
-- [ ] Avoid blocking the main process.
-- [ ] Report scan progress.
-- [ ] Support cancellation.
-- [ ] Avoid duplicate assets.
+- [x] Add folder selection.
+- [x] Scan supported media types.
+- [x] Avoid blocking the main process.
+- [x] Report scan progress.
+- [x] Support cancellation.
+- [x] Avoid duplicate assets.
 
 ## T606 — Implement multiple-window behavior
 
-- [ ] Define whether multiple player windows are supported.
-- [ ] Keep player state isolated per window.
-- [ ] Share preferences safely.
-- [ ] Handle app activation and window restoration.
+- [x] Define whether multiple player windows are supported.
+- [x] Keep player state isolated per window.
+- [x] Share preferences safely.
+- [x] Handle app activation and window restoration.
 
 ---
 

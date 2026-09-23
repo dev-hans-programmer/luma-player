@@ -1,7 +1,9 @@
 import { useEffect, type ReactNode } from 'react';
-import { openMediaFile, setMediaError } from '../media/media-actions';
+import { openMediaFile, refreshRecentFiles, setMediaError } from '../media/media-actions';
+import { loadPlaylists } from '../playlists/playlist-actions';
 import { getActivePlaybackController } from '../playback/playback-controller-registry';
 import { applicationStore } from '../state/app-state';
+import { settingsStore } from '../state/settings-state';
 import { uiStore } from '../state/ui-state';
 
 interface AppProvidersProps {
@@ -54,7 +56,29 @@ export function AppProviders({ children }: AppProvidersProps): ReactNode {
         }));
       });
 
-    return removeMenuListener;
+    void window.electronAPI
+      .getPreferences()
+      .then((preferences) => {
+        settingsStore.setState(preferences);
+        uiStore.setState((current) => ({ ...current, isSidebarOpen: preferences.showSidebar }));
+        document.documentElement.dataset.theme = preferences.theme;
+      })
+      .catch(() => undefined);
+
+    void refreshRecentFiles().catch(() => undefined);
+    void loadPlaylists().catch(() => undefined);
+
+    const removeImportProgressListener = window.electronAPI.onFolderImportProgress((progress) => {
+      uiStore.setState((current) => ({
+        ...current,
+        importProgress: { scanned: progress.scanned, imported: progress.imported },
+      }));
+    });
+
+    return () => {
+      removeMenuListener();
+      removeImportProgressListener();
+    };
   }, []);
 
   useEffect(() => {

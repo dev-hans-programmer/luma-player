@@ -2,25 +2,77 @@ import { useEffect, useRef, useState } from 'react';
 import type { MediaAssetPayload } from '@luma/contracts';
 import { applicationStore } from '../state/app-state';
 import { playbackStore } from '../state/playback-state';
-import { usePlaybackState } from '../state/hooks';
+import { usePlaybackState, useSettingsState } from '../state/hooks';
 import { PlaybackController } from './playback-controller';
 import { setActivePlaybackController } from './playback-controller-registry';
 
 interface VideoPlayerProps {
   readonly asset: MediaAssetPayload;
   readonly onChooseAnother: () => void;
+  readonly onPrevious: (() => void) | undefined;
+  readonly onNext: (() => void) | undefined;
 }
 
-export function VideoPlayer({ asset, onChooseAnother }: VideoPlayerProps): React.JSX.Element {
+export function VideoPlayer({
+  asset,
+  onChooseAnother,
+  onPrevious,
+  onNext,
+}: VideoPlayerProps): React.JSX.Element {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controllerRef = useRef<PlaybackController | null>(null);
   const sourceRef = useRef<string | null>(null);
   const playbackState = usePlaybackState();
+  const settings = useSettingsState();
+  const settingsRef = useRef(settings);
+  const assetIdRef = useRef(asset.id);
+  const pendingResumeRef = useRef<number | null>(null);
+  const lastSavedPositionRef = useRef({ positionMs: 0, savedAt: 0 });
+  const autoplayAssetRef = useRef<string | null>(null);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubValue, setScrubValue] = useState<number | null>(null);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  settingsRef.current = settings;
+  assetIdRef.current = asset.id;
+
+  const savePlaybackPosition = (force = false, requestedAssetId = assetIdRef.current): void => {
+    const currentSettings = settingsRef.current;
+    const controller = controllerRef.current;
+    const state = controller?.getState();
+
+    if (!currentSettings.rememberPlaybackPosition || !state || state.assetId !== requestedAssetId) {
+      return;
+    }
+
+    const durationMs = state.durationMs ?? 0;
+    const positionMs = Math.max(0, state.currentTimeMs);
+    const isNearCompletion = durationMs > 0 && positionMs >= Math.max(0, durationMs - 10_000);
+
+    if (isNearCompletion) {
+      void window.electronAPI.removePlaybackPosition(requestedAssetId).catch(() => undefined);
+      return;
+    }
+
+    const now = Date.now();
+    const movedEnough = Math.abs(positionMs - lastSavedPositionRef.current.positionMs) >= 5_000;
+    const waitedEnough = now - lastSavedPositionRef.current.savedAt >= 5_000;
+
+    if (!force && (!movedEnough || !waitedEnough)) {
+      return;
+    }
+
+    lastSavedPositionRef.current = { positionMs, savedAt: now };
+    void window.electronAPI
+      .savePlaybackPosition({
+        assetId: requestedAssetId,
+        positionMs,
+        updatedAtIso: new Date(now).toISOString(),
+      })
+      .catch(() => undefined);
+  };
 
   const durationMs = playbackState.durationMs ?? 0;
   const currentTimeMs = scrubValue ?? playbackState.currentTimeMs;
@@ -44,7 +96,11 @@ export function VideoPlayer({ asset, onChooseAnother }: VideoPlayerProps): React
       clearTimeout(hideControlsTimer.current);
     }
 
-    if (playbackState.status === 'playing' && !isScrubbing) {
+    if (
+      settingsRef.current.autoHideControls &&
+      playbackState.status === 'playing' &&
+      !isScrubbing
+    ) {
       hideControlsTimer.current = setTimeout(() => setControlsVisible(false), 2800);
     }
   };
@@ -64,6 +120,8 @@ export function VideoPlayer({ asset, onChooseAnother }: VideoPlayerProps): React
       });
     });
     controller.attach(video);
+    controller.setVolume(settingsRef.current.preferredVolume);
+    controller.setPlaybackRate(settingsRef.current.preferredPlaybackRate);
     controllerRef.current = controller;
     const removeActiveController = setActivePlaybackController(controller);
     const removeListener = controller.subscribe((event) => {
@@ -72,9 +130,37 @@ export function VideoPlayer({ asset, onChooseAnother }: VideoPlayerProps): React
       if (event.type === 'metadata') {
         applicationStore.setState((current) => ({ ...current, activeMetadata: event.metadata }));
       }
+
+      if (event.type === 'loadedmetadata' && pendingResumeRef.current !== null) {
+        const positionMs = pendingResumeRef.current;
+        const durationMs = event.state.durationMs ?? 0;
+        pendingResumeRef.current = null;
+
+        if (durationMs > 0 && positionMs >= Math.max(0, durationMs - 10_000)) {
+          void window.electronAPI.removePlaybackPosition(assetIdRef.current).catch(() => undefined);
+        } else {
+          controller.seek(positionMs);
+        }
+      }
+
+      if (event.type === 'canplay' && settingsRef.current.autoplay) {
+        if (autoplayAssetRef.current !== assetIdRef.current) {
+          autoplayAssetRef.current = assetIdRef.current;
+          void controller.play().catch(() => undefined);
+        }
+      }
+
+      if (event.type === 'timeupdate') {
+        savePlaybackPosition();
+      }
+
+      if (event.type === 'ended') {
+        void window.electronAPI.removePlaybackPosition(assetIdRef.current).catch(() => undefined);
+      }
     });
 
     return () => {
+      savePlaybackPosition(true);
       removeListener();
       removeActiveController();
       controller.detach();
@@ -101,13 +187,22 @@ export function VideoPlayer({ asset, onChooseAnother }: VideoPlayerProps): React
       errorMessage: null,
     }));
 
-    void window.electronAPI
-      .getMediaSource(asset.id)
-      .then((source) => {
+    pendingResumeRef.current = null;
+    lastSavedPositionRef.current = { positionMs: 0, savedAt: 0 };
+    autoplayAssetRef.current = null;
+
+    void Promise.all([
+      window.electronAPI.getMediaSource(asset.id),
+      settingsRef.current.rememberPlaybackPosition
+        ? window.electronAPI.getPlaybackPosition(asset.id)
+        : Promise.resolve(null),
+    ])
+      .then(([source, savedPosition]) => {
         if (cancelled) {
           return;
         }
 
+        pendingResumeRef.current = savedPosition?.positionMs ?? null;
         sourceRef.current = source;
         controller.load(asset.id, source);
         return window.electronAPI.getMediaMetadata(asset.id);
@@ -136,8 +231,19 @@ export function VideoPlayer({ asset, onChooseAnother }: VideoPlayerProps): React
 
     return () => {
       cancelled = true;
+      savePlaybackPosition(true, asset.id);
     };
   }, [asset.id]);
+
+  useEffect(() => {
+    const controller = controllerRef.current;
+    if (!controller) {
+      return;
+    }
+
+    controller.setVolume(settings.preferredVolume);
+    controller.setPlaybackRate(settings.preferredPlaybackRate);
+  }, [settings.preferredPlaybackRate, settings.preferredVolume]);
 
   const togglePlayback = (): void => {
     void controllerRef.current?.togglePlayback().catch(() => undefined);
@@ -184,7 +290,11 @@ export function VideoPlayer({ asset, onChooseAnother }: VideoPlayerProps): React
       onMouseMove={scheduleControlsHide}
       onFocusCapture={() => setControlsVisible(true)}
       onMouseLeave={() => {
-        if (playbackState.status === 'playing' && !isScrubbing) {
+        if (
+          settingsRef.current.autoHideControls &&
+          playbackState.status === 'playing' &&
+          !isScrubbing
+        ) {
           setControlsVisible(false);
         }
       }}
@@ -261,10 +371,22 @@ export function VideoPlayer({ asset, onChooseAnother }: VideoPlayerProps): React
           >
             ↷
           </button>
-          <button type="button" className="control-button" disabled aria-label="Previous item">
+          <button
+            type="button"
+            className="control-button"
+            disabled={!onPrevious}
+            onClick={onPrevious}
+            aria-label="Previous item"
+          >
             ‹
           </button>
-          <button type="button" className="control-button" disabled aria-label="Next item">
+          <button
+            type="button"
+            className="control-button"
+            disabled={!onNext}
+            onClick={onNext}
+            aria-label="Next item"
+          >
             ›
           </button>
           <button

@@ -1,9 +1,23 @@
 export const IPC_CHANNELS = {
   appGetInfo: 'app:get-info',
   mediaOpenFile: 'media:open-file',
+  mediaOpenRecentFile: 'media:open-recent-file',
+  mediaGetRecentFiles: 'media:get-recent-files',
+  mediaClearRecentFiles: 'media:clear-recent-files',
   mediaRegisterDroppedFiles: 'media:register-dropped-files',
+  mediaImportFolder: 'media:import-folder',
+  mediaCancelFolderImport: 'media:cancel-folder-import',
+  mediaImportFolderProgress: 'media:folder-import-progress',
   mediaGetSource: 'media:get-source',
   mediaGetMetadata: 'media:get-metadata',
+  preferencesGet: 'preferences:get',
+  preferencesSave: 'preferences:save',
+  resumeGet: 'resume:get',
+  resumeSave: 'resume:save',
+  resumeRemove: 'resume:remove',
+  playlistsList: 'playlists:list',
+  playlistsSave: 'playlists:save',
+  playlistsRemove: 'playlists:remove',
   menuCommand: 'menu:command',
   rendererError: 'renderer:error',
   windowClose: 'window:close',
@@ -48,6 +62,47 @@ export interface MediaMetadataPayload {
   readonly chapters: readonly ChapterPayload[];
 }
 
+export interface RecentFilePayload {
+  readonly asset: MediaAssetPayload;
+  readonly lastOpenedAtIso: string;
+}
+
+export interface PlayerPreferencesPayload {
+  readonly theme: 'system' | 'light' | 'dark';
+  readonly rememberPlaybackPosition: boolean;
+  readonly autoplay: boolean;
+  readonly preferredVolume: number;
+  readonly preferredPlaybackRate: number;
+  readonly showSidebar: boolean;
+  readonly autoHideControls: boolean;
+}
+
+export interface PlaybackPositionPayload {
+  readonly assetId: string;
+  readonly positionMs: number;
+  readonly updatedAtIso: string;
+}
+
+export interface PlaylistItemPayload {
+  readonly id: string;
+  readonly assetId: string;
+  readonly title: string;
+}
+
+export interface PlaylistPayload {
+  readonly id: string;
+  readonly name: string;
+  readonly items: readonly PlaylistItemPayload[];
+  readonly activeItemId: string | null;
+}
+
+export interface FolderImportProgressPayload {
+  readonly scanned: number;
+  readonly imported: number;
+  readonly skipped: number;
+  readonly complete: boolean;
+}
+
 export interface AudioTrackPayload {
   readonly id: string;
   readonly label: string;
@@ -78,9 +133,22 @@ export interface RendererErrorPayload {
 export interface IpcRequestMap {
   readonly 'app:get-info': undefined;
   readonly 'media:open-file': undefined;
+  readonly 'media:open-recent-file': { readonly assetId: string };
+  readonly 'media:get-recent-files': undefined;
+  readonly 'media:clear-recent-files': undefined;
   readonly 'media:register-dropped-files': { readonly filePaths: readonly string[] };
+  readonly 'media:import-folder': undefined;
+  readonly 'media:cancel-folder-import': undefined;
   readonly 'media:get-source': { readonly assetId: string };
   readonly 'media:get-metadata': { readonly assetId: string };
+  readonly 'preferences:get': undefined;
+  readonly 'preferences:save': PlayerPreferencesPayload;
+  readonly 'resume:get': { readonly assetId: string };
+  readonly 'resume:save': PlaybackPositionPayload;
+  readonly 'resume:remove': { readonly assetId: string };
+  readonly 'playlists:list': undefined;
+  readonly 'playlists:save': PlaylistPayload;
+  readonly 'playlists:remove': { readonly playlistId: string };
   readonly 'menu:command': undefined;
   readonly 'renderer:error': RendererErrorPayload;
   readonly 'window:close': undefined;
@@ -92,9 +160,22 @@ export interface IpcRequestMap {
 export interface IpcResponseMap {
   readonly 'app:get-info': AppInfo;
   readonly 'media:open-file': readonly MediaAssetPayload[];
+  readonly 'media:open-recent-file': MediaAssetPayload;
+  readonly 'media:get-recent-files': readonly RecentFilePayload[];
+  readonly 'media:clear-recent-files': void;
   readonly 'media:register-dropped-files': readonly MediaAssetPayload[];
+  readonly 'media:import-folder': readonly MediaAssetPayload[];
+  readonly 'media:cancel-folder-import': void;
   readonly 'media:get-source': string;
   readonly 'media:get-metadata': MediaMetadataPayload;
+  readonly 'preferences:get': PlayerPreferencesPayload;
+  readonly 'preferences:save': void;
+  readonly 'resume:get': PlaybackPositionPayload | null;
+  readonly 'resume:save': void;
+  readonly 'resume:remove': void;
+  readonly 'playlists:list': readonly PlaylistPayload[];
+  readonly 'playlists:save': void;
+  readonly 'playlists:remove': void;
   readonly 'window:close': void;
   readonly 'window:minimize': void;
   readonly 'window:toggle-fullscreen': boolean;
@@ -104,6 +185,7 @@ export interface IpcResponseMap {
 export interface IpcEventMap {
   readonly 'menu:command': AppCommandId;
   readonly 'renderer:error': RendererErrorPayload;
+  readonly 'media:folder-import-progress': FolderImportProgressPayload;
 }
 
 export type IpcRequest<C extends keyof IpcRequestMap> = IpcRequestMap[C];
@@ -124,11 +206,27 @@ export interface ElectronAPI {
   readonly electronVersion: string;
   readonly getAppInfo: () => Promise<AppInfo>;
   readonly openFile: () => Promise<readonly MediaAssetPayload[]>;
+  readonly openRecentFile: (assetId: string) => Promise<MediaAssetPayload>;
+  readonly getRecentFiles: () => Promise<readonly RecentFilePayload[]>;
+  readonly clearRecentFiles: () => Promise<void>;
   readonly registerDroppedFiles: (
     filePaths: readonly string[],
   ) => Promise<readonly MediaAssetPayload[]>;
   readonly getMediaSource: (assetId: string) => Promise<string>;
   readonly getMediaMetadata: (assetId: string) => Promise<MediaMetadataPayload>;
+  readonly importFolder: () => Promise<readonly MediaAssetPayload[]>;
+  readonly cancelFolderImport: () => Promise<void>;
+  readonly onFolderImportProgress: (
+    listener: (progress: FolderImportProgressPayload) => void,
+  ) => () => void;
+  readonly getPreferences: () => Promise<PlayerPreferencesPayload>;
+  readonly savePreferences: (preferences: PlayerPreferencesPayload) => Promise<void>;
+  readonly getPlaybackPosition: (assetId: string) => Promise<PlaybackPositionPayload | null>;
+  readonly savePlaybackPosition: (position: PlaybackPositionPayload) => Promise<void>;
+  readonly removePlaybackPosition: (assetId: string) => Promise<void>;
+  readonly listPlaylists: () => Promise<readonly PlaylistPayload[]>;
+  readonly savePlaylist: (playlist: PlaylistPayload) => Promise<void>;
+  readonly removePlaylist: (playlistId: string) => Promise<void>;
   readonly reportError: (payload: RendererErrorPayload) => void;
   readonly onMenuCommand: (listener: (command: AppCommandId) => void) => () => void;
   readonly window: {
@@ -221,6 +319,93 @@ export function validateAssetIdRequest(
   }
 
   return { success: true, data: { assetId: value.assetId } };
+}
+
+export function validatePlaylistIdRequest(
+  value: unknown,
+): ValidationResult<{ readonly playlistId: string }> {
+  if (
+    !isRecord(value) ||
+    typeof value.playlistId !== 'string' ||
+    value.playlistId.trim().length === 0
+  ) {
+    return { success: false, message: 'A non-empty playlist id is required.' };
+  }
+
+  return { success: true, data: { playlistId: value.playlistId } };
+}
+
+export function validatePreferencesPayload(
+  value: unknown,
+): ValidationResult<PlayerPreferencesPayload> {
+  if (!isRecord(value)) {
+    return { success: false, message: 'Preferences payload must be an object.' };
+  }
+
+  if (
+    (value.theme !== 'system' && value.theme !== 'light' && value.theme !== 'dark') ||
+    typeof value.rememberPlaybackPosition !== 'boolean' ||
+    typeof value.autoplay !== 'boolean' ||
+    typeof value.preferredVolume !== 'number' ||
+    value.preferredVolume < 0 ||
+    value.preferredVolume > 1 ||
+    typeof value.preferredPlaybackRate !== 'number' ||
+    value.preferredPlaybackRate < 0.25 ||
+    value.preferredPlaybackRate > 4 ||
+    typeof value.showSidebar !== 'boolean' ||
+    typeof value.autoHideControls !== 'boolean'
+  ) {
+    return { success: false, message: 'Preferences payload is invalid.' };
+  }
+
+  return { success: true, data: value as unknown as PlayerPreferencesPayload };
+}
+
+export function validatePlaybackPositionPayload(
+  value: unknown,
+): ValidationResult<PlaybackPositionPayload> {
+  if (
+    !isRecord(value) ||
+    typeof value.assetId !== 'string' ||
+    value.assetId.length === 0 ||
+    typeof value.positionMs !== 'number' ||
+    !Number.isFinite(value.positionMs) ||
+    value.positionMs < 0 ||
+    typeof value.updatedAtIso !== 'string'
+  ) {
+    return { success: false, message: 'Playback position payload is invalid.' };
+  }
+
+  return { success: true, data: value as unknown as PlaybackPositionPayload };
+}
+
+export function validatePlaylistPayload(value: unknown): ValidationResult<PlaylistPayload> {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== 'string' ||
+    typeof value.name !== 'string' ||
+    !Array.isArray(value.items) ||
+    (value.activeItemId !== null && typeof value.activeItemId !== 'string')
+  ) {
+    return { success: false, message: 'Playlist payload is invalid.' };
+  }
+
+  const hasInvalidItem = value.items.some((item) => {
+    if (!isRecord(item)) {
+      return true;
+    }
+    return (
+      typeof item.id !== 'string' ||
+      typeof item.assetId !== 'string' ||
+      typeof item.title !== 'string'
+    );
+  });
+
+  if (hasInvalidItem) {
+    return { success: false, message: 'Playlist items are invalid.' };
+  }
+
+  return { success: true, data: value as unknown as PlaylistPayload };
 }
 
 export function serializeIpcError(error: unknown): SerializedIpcError {

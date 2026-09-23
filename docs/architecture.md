@@ -101,10 +101,20 @@ provides basic duration and dimension events through `PlaybackController`.
 ## Renderer state boundaries
 
 The renderer has separate external stores for application, playback, UI, and
-settings state. Components subscribe only to the store they render. Playback
+settings, and playlist state. Components subscribe only to the store they render. Playback
 time/progress updates therefore notify playback subscribers without rerendering
 the shell, settings, or sidebar. Event subscriptions are created at the
 provider boundary and always return their cleanup function.
+
+## Persistence flow
+
+Preferences, recent files, resume positions, and playlists are stored by
+versioned main-process services. The JSON store writes a temporary file and
+atomically renames it into place. Renderer calls cross the preload bridge and
+are runtime validated in IPC. Resume updates are throttled in the service and
+the renderer so high-frequency playback events never become synchronous disk
+work. See [decision 0005](decisions/0005-single-window-persistence.md) for
+the single-window policy.
 
 ## Error flow
 

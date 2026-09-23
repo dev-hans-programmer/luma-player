@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { applicationStore } from './app-state';
 import { playbackStore } from './playback-state';
+import { playlistStore } from './playlist-state';
 import { settingsStore } from './settings-state';
 import { uiStore } from './ui-state';
 
@@ -29,5 +30,13 @@ export function useSettingsState() {
     settingsStore.subscribe,
     settingsStore.getSnapshot,
     settingsStore.getSnapshot,
+  );
+}
+
+export function usePlaylistState() {
+  return useSyncExternalStore(
+    playlistStore.subscribe,
+    playlistStore.getSnapshot,
+    playlistStore.getSnapshot,
   );
 }

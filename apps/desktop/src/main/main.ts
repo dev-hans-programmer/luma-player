@@ -5,6 +5,10 @@ import { registerWindowSecurity } from './security/security-policy';
 import { logger, registerProcessErrorHandlers } from './services/logger';
 import { MediaAssetService } from './services/media-asset-service';
 import { registerMediaProtocol } from './services/media-protocol';
+import { PlaylistService } from './services/persistence/playlist-service';
+import { PreferencesService } from './services/persistence/preferences-service';
+import { RecentFilesService } from './services/persistence/recent-files-service';
+import { ResumePositionService } from './services/persistence/resume-position-service';
 import { createMainWindow, getMainWindow } from './windows/main-window';
 
 protocol.registerSchemesAsPrivileged([
@@ -29,7 +33,13 @@ if (!hasSingleInstanceLock) {
   let unregisterWindowSecurity: (() => void) | undefined;
   let unregisterMediaProtocol: (() => void) | undefined;
   let isInitialized = false;
-  const mediaAssetService = new MediaAssetService();
+  let isPreparingToQuit = false;
+  let isFinalizingQuit = false;
+  const recentFiles = new RecentFilesService();
+  const mediaAssetService = new MediaAssetService(recentFiles);
+  const preferences = new PreferencesService();
+  const resumePositions = new ResumePositionService();
+  const playlists = new PlaylistService();
 
   const handleTerminationSignal = (signal: NodeJS.Signals): void => {
     logger.info('Received development termination signal', { signal });
@@ -60,7 +70,12 @@ if (!hasSingleInstanceLock) {
 
     isInitialized = true;
     unregisterMediaProtocol = registerMediaProtocol(mediaAssetService);
-    unregisterIpcHandlers = registerIpcHandlers(getMainWindow, mediaAssetService);
+    unregisterIpcHandlers = registerIpcHandlers(getMainWindow, mediaAssetService, {
+      preferences,
+      recentFiles,
+      resumePositions,
+      playlists,
+    });
     await createMainWindow((createdWindow) => {
       unregisterWindowSecurity = registerWindowSecurity(createdWindow);
     });
@@ -77,11 +92,32 @@ if (!hasSingleInstanceLock) {
     logger.info('Application initialized');
   });
 
-  app.on('before-quit', () => {
-    unregisterIpcHandlers?.();
-    unregisterWindowSecurity?.();
-    unregisterMediaProtocol?.();
-    unregisterProcessErrorHandlers();
+  app.on('before-quit', (event) => {
+    if (isPreparingToQuit) {
+      return;
+    }
+
+    event.preventDefault();
+    isPreparingToQuit = true;
+    void resumePositions.flush().finally(() => app.quit());
+  });
+
+  app.on('will-quit', (event) => {
+    if (isFinalizingQuit) {
+      return;
+    }
+
+    // Keep IPC alive until renderer teardown has had a chance to send its
+    // final resume position, then flush the debounced store before exiting.
+    event.preventDefault();
+    isFinalizingQuit = true;
+    void resumePositions.flush().finally(() => {
+      unregisterIpcHandlers?.();
+      unregisterWindowSecurity?.();
+      unregisterMediaProtocol?.();
+      unregisterProcessErrorHandlers();
+      app.quit();
+    });
   });
 
   app.on('window-all-closed', () => {
