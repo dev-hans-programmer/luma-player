@@ -12,7 +12,7 @@ Status: Proposed
 - Responsive dark and light layouts.
 - Accessible controls and VoiceOver support.
 - Clear loading, buffering, and error states.
-- Signed and notarized macOS distribution.
+- Downloadable macOS DMG and ZIP artifacts.
 
 ## Deferred features
 
@@ -29,4 +29,4 @@ Playlists, chapters, thumbnail timelines, advanced subtitle controls, and macOS 
 
 ## Definition of done
 
-The first release is complete when a user can open a supported local video, play it smoothly, control it with mouse or keyboard, resume it later, recover from common failures, and install a signed/notarized build on a clean Mac.
+The first release is complete when a user can open a supported local video, play it smoothly, control it with mouse or keyboard, resume it later, recover from common failures, and install a downloadable macOS artifact on a clean Mac.

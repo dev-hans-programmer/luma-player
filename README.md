@@ -2,7 +2,7 @@
 
 Luma Player is a production-oriented macOS video player built with Electron, React, and TypeScript.
 
-The product name and bundle identifier are provisional until Phase 0 is approved. The current working identity is documented in [`docs/decisions/0001-product-identity.md`](docs/decisions/0001-product-identity.md).
+The current product identity is documented in [`docs/decisions/0001-product-identity.md`](docs/decisions/0001-product-identity.md).
 
 ## Product goal
 
@@ -17,7 +17,7 @@ Provide a fast, polished, keyboard-friendly local video player with a calm macOS
 - Recent files and resume position.
 - Dark and light appearance support.
 - Accessible controls and VoiceOver-friendly interaction.
-- Signed, notarized macOS distribution.
+- Downloadable macOS DMG and ZIP artifacts from push CI.
 
 ## Deferred scope
 
@@ -25,7 +25,7 @@ Video editing, transcoding, cloud synchronization, media-server browsing, networ
 
 ## Project status
 
-Phase 7 is implemented. The secure Electron application shell, typed preload
+Phase 11 packaging is implemented. The secure Electron application shell, typed preload
 bridge, domain entities and ports, runtime-validated IPC contracts, isolated
 renderer stores, secure local-file registration, range-capable `media://`
 streaming, optional metadata probing, playback controller, responsive player
@@ -41,7 +41,9 @@ An optional Swift AVFoundation metadata bridge is available for inspection:
 run `pnpm native:build`, then `pnpm dev`. It is fail-soft and not required for
 ordinary playback. See [`docs/decisions/0008-swift-metadata-bridge.md`](docs/decisions/0008-swift-metadata-bridge.md).
 Manual VoiceOver verification remains a release validation step. Electron
-Forge packaging remains intentionally deferred to Phase 11.
+Electron Forge now produces arm64 DMG and ZIP artifacts, with x64 and universal
+targets configured. See [`docs/release.md`](docs/release.md) and
+[`docs/decisions/0009-packaging-and-release.md`](docs/decisions/0009-packaging-and-release.md).
 
 Run the development scaffold with:
 
@@ -68,4 +70,5 @@ failure.
 - [`docs/architecture.md`](docs/architecture.md) — high-level application architecture.
 - [`docs/media-support.md`](docs/media-support.md) — supported media policy.
 - [`docs/ui-spec.md`](docs/ui-spec.md) — visual and interaction specification.
+- [`docs/release.md`](docs/release.md) — macOS packaging and downloadable CI artifacts.
 - [`docs/decisions/`](docs/decisions/) — product and architecture decisions.

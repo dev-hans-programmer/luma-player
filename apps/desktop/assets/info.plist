@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+      <dict>
+        <key>CFBundleTypeExtensions</key>
+        <array>
+          <string>mp4</string>
+          <string>m4v</string>
+          <string>mov</string>
+          <string>mkv</string>
+          <string>webm</string>
+          <string>avi</string>
+          <string>wmv</string>
+        </array>
+        <key>CFBundleTypeName</key>
+        <string>Luma video</string>
+        <key>CFBundleTypeRole</key>
+        <string>Viewer</string>
+        <key>LSHandlerRank</key>
+        <string>Owner</string>
+      </dict>
+      <dict>
+        <key>CFBundleTypeExtensions</key>
+        <array>
+          <string>mp3</string>
+          <string>m4a</string>
+          <string>wav</string>
+          <string>flac</string>
+          <string>ogg</string>
+          <string>oga</string>
+          <string>opus</string>
+          <string>aac</string>
+        </array>
+        <key>CFBundleTypeName</key>
+        <string>Luma audio</string>
+        <key>CFBundleTypeRole</key>
+        <string>Viewer</string>
+        <key>LSHandlerRank</key>
+        <string>Owner</string>
+      </dict>
+    </array>
+  </dict>
+</plist>

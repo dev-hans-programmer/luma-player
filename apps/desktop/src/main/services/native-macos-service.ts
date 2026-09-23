@@ -132,6 +132,9 @@ export class SwiftNativeMediaService implements NativeMediaProbe {
             'release/luma-media-helper',
           ),
           path.resolve(process.resourcesPath, 'native/macos/luma-media-helper'),
+          // Electron Forge copies the optional helper as a top-level extra
+          // resource so it stays outside app.asar and can be executed safely.
+          path.resolve(process.resourcesPath, 'luma-media-helper'),
         ].filter((candidate): candidate is string => Boolean(candidate));
 
         for (const candidate of candidates) {

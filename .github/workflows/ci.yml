@@ -1,0 +1,79 @@
+name: Luma CI
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.5.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run quality gates
+        run: pnpm ci
+
+      - name: Discover end-to-end tests
+        run: pnpm test:e2e
+
+  package:
+    if: github.event_name == 'push'
+    needs: quality
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.5.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build macOS arm64 artifacts
+        run: pnpm make:mac:arm64
+
+      - name: Create artifact checksums
+        run: |
+          find release/make -type f | sort | while IFS= read -r file; do
+            shasum -a 256 "$file"
+          done > release/SHA256SUMS
+
+      - name: Upload downloadable artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: luma-player-macos-arm64-${{ github.sha }}
+          path: |
+            release/make/*.dmg
+            release/make/zip/darwin/arm64/*.zip
+            release/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14

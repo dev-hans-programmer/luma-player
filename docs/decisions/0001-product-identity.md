@@ -13,7 +13,7 @@ Provisional technical identity:
 - Bundle identifier: `com.example.LumaPlayer`
 - Minimum macOS version: macOS 14.0+
 
-The `com.example` bundle identifier is intentionally a placeholder and must be replaced with the real publisher-owned reverse-DNS identifier before signing or distribution.
+The `com.example` bundle identifier is intentionally a placeholder and must be replaced with the real publisher-owned reverse-DNS identifier before publishing artifacts.
 
 ## Rationale
 

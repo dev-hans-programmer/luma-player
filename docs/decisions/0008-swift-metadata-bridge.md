@@ -22,5 +22,5 @@ process and are never exposed to React or the preload bridge.
 The process boundary makes the binding easy to inspect and keeps Swift
 independent from React. JSONL is sufficient for low-frequency metadata
 requests, while request IDs permit concurrent work and future commands. The
-helper is not yet packaged, signed, or notarized; those concerns belong in the
-release packaging phase after the native contract stabilizes.
+helper is packaged as a separate resource during the macOS artifact build so
+the main process can execute it outside `app.asar`.

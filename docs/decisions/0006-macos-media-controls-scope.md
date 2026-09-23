@@ -14,7 +14,7 @@ required media-key behavior reliably.
 
 ## Rationale
 
-Adding a native media-control helper would create another packaged, signed,
+Adding a native media-control helper would create another packaged,
 architecture-specific binary and would expand the release failure surface. It
 does not improve ordinary playback, track selection, chapters, thumbnails, or
 Picture in Picture. The decision can be revisited in Phase 8 with a measured
