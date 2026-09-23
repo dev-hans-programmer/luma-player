@@ -25,7 +25,7 @@ Video editing, transcoding, cloud synchronization, media-server browsing, networ
 
 ## Project status
 
-Phase 1 is complete. The Electron/Vite development foundation, strict TypeScript setup, linting, formatting, testing, and workspace structure are in place. Electron Forge packaging remains intentionally deferred to Phase 11.
+Phase 2 is complete. The secure Electron application shell, typed preload bridge, window lifecycle, menus, diagnostics, navigation policy, and renderer error handling are in place. Media protocol and playback work begin in Phase 3/4. Electron Forge packaging remains intentionally deferred to Phase 11.
 
 Run the development scaffold with:
 
@@ -39,6 +39,12 @@ If this checkout is inside a Git repository, install the local quality gate with
 ```sh
 pnpm hooks:install
 ```
+
+The development renderer uses port `5173`. If the command reports that the port
+is already in use, stop the previous Luma Player/Vite process and run `pnpm dev`
+again. A normal manual shutdown may still cause the shell to report a signal
+exit from the Electron dev process; it does not indicate a playback or build
+failure.
 
 ## Documentation
 

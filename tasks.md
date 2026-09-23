@@ -157,22 +157,22 @@ Acceptance criteria:
 
 ## T201 — Create the Electron main process
 
-- [ ] Create `apps/desktop/src/main/main.ts`.
-- [ ] Handle `app.whenReady()`.
-- [ ] Handle macOS activation.
-- [ ] Handle `window-all-closed` correctly for macOS.
-- [ ] Prevent duplicate application initialization.
-- [ ] Add graceful shutdown behavior.
+- [x] Create `apps/desktop/src/main/main.ts`.
+- [x] Handle `app.whenReady()`.
+- [x] Handle macOS activation.
+- [x] Handle `window-all-closed` correctly for macOS.
+- [x] Prevent duplicate application initialization.
+- [x] Add graceful shutdown behavior.
 
 ## T202 — Create the main BrowserWindow
 
-- [ ] Create `main-window.ts`.
-- [ ] Configure initial size and minimum size.
-- [ ] Configure titlebar behavior.
-- [ ] Configure background color.
-- [ ] Configure preload path.
-- [ ] Configure secure `webPreferences`.
-- [ ] Restore and persist window bounds safely.
+- [x] Create `main-window.ts`.
+- [x] Configure initial size and minimum size.
+- [x] Configure titlebar behavior.
+- [x] Configure background color.
+- [x] Configure preload path.
+- [x] Configure secure `webPreferences`.
+- [x] Restore and persist window bounds safely.
 
 Acceptance criteria:
 
@@ -181,48 +181,48 @@ Acceptance criteria:
 
 ## T203 — Implement secure preload
 
-- [ ] Create `preload.ts`.
-- [ ] Enable context isolation.
-- [ ] Keep Node integration disabled in the renderer.
-- [ ] Expose only explicit, typed methods through `contextBridge`.
-- [ ] Add `window-api.d.ts` typings.
-- [ ] Add cleanup support for event listeners.
+- [x] Create `preload.ts`.
+- [x] Enable context isolation.
+- [x] Keep Node integration disabled in the renderer.
+- [x] Expose only explicit, typed methods through `contextBridge`.
+- [x] Add `window-api.d.ts` typings.
+- [x] Add cleanup support for event listeners.
 
 ## T204 — Add renderer bootstrap
 
-- [ ] Create React root entry point.
-- [ ] Add global error boundary.
-- [ ] Add application providers.
-- [ ] Add loading shell.
-- [ ] Add fallback error screen.
-- [ ] Verify the renderer does not access Node or Electron directly.
+- [x] Create React root entry point.
+- [x] Add global error boundary.
+- [x] Add application providers.
+- [x] Add loading shell.
+- [x] Add fallback error screen.
+- [x] Verify the renderer does not access Node or Electron directly.
 
 ## T205 — Add application menu and command model
 
-- [ ] Add File menu.
-- [ ] Add Playback menu.
-- [ ] Add View menu.
-- [ ] Add Window menu.
-- [ ] Add Help menu.
-- [ ] Define commands independently from menu presentation.
-- [ ] Connect commands to the typed preload API.
+- [x] Add File menu.
+- [x] Add Playback menu.
+- [x] Add View menu.
+- [x] Add Window menu.
+- [x] Add Help menu.
+- [x] Define commands independently from menu presentation.
+- [x] Connect commands to the typed preload API.
 
 ## T206 — Add secure content loading
 
-- [ ] Define a restrictive Content Security Policy.
-- [ ] Prevent unexpected navigation.
-- [ ] Prevent unexpected new-window creation.
-- [ ] Reject untrusted external content.
-- [ ] Prefer custom protocols over unrestricted `file://` loading.
-- [ ] Add security documentation.
+- [x] Define a restrictive Content Security Policy.
+- [x] Prevent unexpected navigation.
+- [x] Prevent unexpected new-window creation.
+- [x] Reject untrusted external content.
+- [~] Prefer custom protocols over unrestricted `file://` loading; media protocol work is scheduled for Phase 4.
+- [x] Add security documentation.
 
 ## T207 — Add application logging and diagnostics
 
-- [ ] Add structured logs for main-process failures.
-- [ ] Add renderer error reporting to the main process.
-- [ ] Redact sensitive paths where appropriate.
-- [ ] Add a debug log export option.
-- [ ] Ensure logs do not affect playback performance.
+- [x] Add structured logs for main-process failures.
+- [x] Add renderer error reporting to the main process.
+- [x] Redact sensitive paths where appropriate.
+- [x] Add a debug log export option.
+- [x] Ensure logs do not affect playback performance.
 
 ---
 
