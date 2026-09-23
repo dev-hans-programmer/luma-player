@@ -1,11 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { getAssetId, parseRangeHeader } from './media-protocol';
+import { getAssetId, getSubtitleTrackId, parseRangeHeader } from './media-protocol';
 
 describe('media protocol asset addressing', () => {
   it('accepts only opaque media asset hosts', () => {
     expect(getAssetId('media://asset-123')).toBe('asset-123');
     expect(getAssetId('media:///Users/private/video.mp4')).toBeNull();
     expect(getAssetId('media://asset-123/private/video.mp4')).toBeNull();
+  });
+});
+
+describe('media protocol subtitle addressing', () => {
+  it('accepts only the subtitle query value', () => {
+    expect(getSubtitleTrackId('media://asset-123?subtitle=subtitle-external-vtt')).toBe(
+      'subtitle-external-vtt',
+    );
+    expect(getSubtitleTrackId('media://asset-123')).toBeNull();
   });
 });
 

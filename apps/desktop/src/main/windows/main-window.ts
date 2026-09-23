@@ -108,6 +108,20 @@ export async function createMainWindow(
     mainWindow = null;
   });
 
+  let rendererRecoveryAttempted = false;
+  window.webContents.on('render-process-gone', (_event, details) => {
+    logger.error('Renderer process exited', {
+      reason: details.reason,
+      exitCode: details.exitCode,
+    });
+
+    if (!rendererRecoveryAttempted && details.reason !== 'clean-exit' && !window.isDestroyed()) {
+      rendererRecoveryAttempted = true;
+      logger.warn('Reloading the renderer once after an unexpected renderer exit');
+      void window.reload();
+    }
+  });
+
   beforeLoad?.(window);
 
   if (process.env.ELECTRON_RENDERER_URL) {

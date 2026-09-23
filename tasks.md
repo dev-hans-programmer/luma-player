@@ -658,39 +658,39 @@ Acceptance criteria:
 
 ## T901 — Establish performance baselines
 
-- [ ] Measure cold startup.
-- [ ] Measure first-frame time.
-- [ ] Measure seek latency.
-- [ ] Measure idle CPU usage.
-- [ ] Measure playback CPU/GPU usage.
-- [ ] Measure memory over long playback.
-- [ ] Measure renderer frame rate during resize.
-- [ ] Document target hardware and media fixtures.
+- [~] Measure cold startup.
+- [~] Measure first-frame time.
+- [~] Measure seek latency.
+- [~] Measure idle CPU usage.
+- [~] Measure playback CPU/GPU usage.
+- [~] Measure memory over long playback.
+- [~] Measure renderer frame rate during resize.
+- [x] Document target hardware and media fixtures.
 
 ## T902 — Optimize renderer updates
 
-- [ ] Profile React renders.
+- [~] Profile React renders.
 - [ ] Add selector-based subscriptions.
-- [ ] Throttle timeline updates.
-- [ ] Keep transient pointer state local where possible.
-- [ ] Remove unnecessary context updates.
+- [x] Throttle timeline updates.
+- [x] Keep transient pointer state local where possible.
+- [x] Remove unnecessary context updates.
 - [ ] Lazy-load non-player features.
 
 ## T903 — Optimize media delivery
 
-- [ ] Verify byte-range support.
-- [ ] Verify large-file behavior.
-- [ ] Verify stream cancellation.
-- [ ] Verify no complete-file buffering.
-- [ ] Verify external-drive playback.
+- [x] Verify byte-range support.
+- [~] Verify large-file behavior.
+- [~] Verify stream cancellation.
+- [x] Verify no complete-file buffering.
+- [~] Verify external-drive playback.
 
 ## T904 — Optimize window and animation behavior
 
-- [ ] Profile fullscreen transitions.
-- [ ] Profile resizing.
-- [ ] Avoid expensive backdrop effects over video.
-- [ ] Use compositor-friendly transforms and opacity.
-- [ ] Respect reduced-motion settings.
+- [~] Profile fullscreen transitions.
+- [~] Profile resizing.
+- [x] Avoid expensive backdrop effects over video.
+- [x] Use compositor-friendly transforms and opacity.
+- [x] Respect reduced-motion settings.
 
 ## T905 — Test 4K and long-duration playback
 
@@ -704,12 +704,12 @@ Acceptance criteria:
 
 ## T906 — Add crash and failure recovery
 
-- [ ] Handle renderer crash.
-- [ ] Handle main-process exception.
-- [ ] Handle media stream failure.
-- [ ] Handle external-drive removal.
-- [ ] Handle corrupted persistence data.
-- [ ] Preserve useful diagnostics without exposing private content.
+- [x] Handle renderer crash.
+- [x] Handle main-process exception.
+- [x] Handle media stream failure.
+- [x] Handle external-drive removal.
+- [x] Handle corrupted persistence data.
+- [x] Preserve useful diagnostics without exposing private content.
 
 ---
 
