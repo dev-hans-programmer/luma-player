@@ -2,9 +2,11 @@ import { access, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 
 const execFileAsync = promisify(execFile);
-const releaseDirectory = path.resolve('release');
+const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
+const releaseDirectory = path.resolve(scriptDirectory, '../release');
 const requestedArchitecture = process.env.LUMA_PACKAGE_ARCH ?? process.arch;
 const architectureName = ['arm64', 'x64', 'universal'].includes(requestedArchitecture)
   ? requestedArchitecture
