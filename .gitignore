@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.vite/
+coverage/
+playwright-report/
+test-results/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Local signing and release material
+*.p12
+*.cer
+*.provisionprofile
+release/
+out/

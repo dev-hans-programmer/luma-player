@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+allowBuilds:
+  electron: true
+  esbuild: true
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - electron@44.4.5
+  - prettier@3.9.9
