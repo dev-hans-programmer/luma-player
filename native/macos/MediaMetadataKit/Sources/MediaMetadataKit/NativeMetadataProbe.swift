@@ -63,7 +63,7 @@ public struct NativeMetadataProbe: Sendable {
       durationMs: durationMs,
       width: videoSize.map { Int(abs($0.width)) },
       height: videoSize.map { Int(abs($0.height)) },
-      hasAudio: tracks.contains { $0.mediaType == .audio },
+      hasAudio: tracks.contains { $0.mediaType == .audio }
     )
   }
 }
